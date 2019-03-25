@@ -77,7 +77,7 @@ class _ImagePickerUtilsState extends State<ImagePickerUtils> {
   Future<void> takePicture(BuildContext context, ImageSource source) async {
     final Tags tag = widget._blocTagsPage.tags;
     final File imageFile = await ImagePicker.pickImage(
-        source: source, maxWidth: 2160, maxHeight: 2880);
+        source: source, maxWidth: 1200, maxHeight: 1600);
     Navigator.of(context).push(MaterialPageRoute(
         builder: ((BuildContext context) => CreatePostPage(imageFile,tag))));
     return;
