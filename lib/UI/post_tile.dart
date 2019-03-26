@@ -65,7 +65,7 @@ class PostTile extends StatefulWidget {
   }
 }
 
-class PostTileState extends State<PostTile> {
+class PostTileState extends State<PostTile> with AutomaticKeepAliveClientMixin  {
   bool _isLiked;
   UserCircleAvatar _userCircleAvatar;
   User currentUser;
@@ -218,4 +218,8 @@ class PostTileState extends State<PostTile> {
       ):Container(width: 0.0,height: 0.0,),
     );
   }
+
+  @override
+  // TODO: implement wantKeepAlive
+  bool get wantKeepAlive => true;
 }

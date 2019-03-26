@@ -17,9 +17,9 @@ class TagsChat extends StatefulWidget {
   }
 }
 
-class TagsChatState extends State<TagsChat> {
+class TagsChatState extends State<TagsChat>{
 
-
+  //TODO: faire un cache pour ne pas recharger les info déja afficher 
 
   @override
   void initState() {
@@ -48,6 +48,19 @@ class TagsChatState extends State<TagsChat> {
         return ListView.builder(
           reverse: true,
           itemCount: snapshot.data.documents.length,
+          addAutomaticKeepAlives: true,
+          cacheExtent: 20.0,
+          /*children:
+            snapshot.data.documents.map((DocumentSnapshot documents){
+              final MessageTile messageTile = MessageTile.fromDocumentSnapshot(documents);
+              return Column(
+                children: <Widget>[
+                  messageTile,
+                  Divider()
+                ],
+              );
+            }).toList()
+          ,*/
           itemBuilder: (BuildContext context, int index) {
             return Column(
               children: <Widget>[
@@ -55,8 +68,11 @@ class TagsChatState extends State<TagsChat> {
                 Divider()
               ],
             );
-          });
+          }
+        );
       }
     );
   }
+
+ 
 }

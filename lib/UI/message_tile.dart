@@ -9,7 +9,7 @@ import 'package:tags/Utils/firebase_db.dart';
 
 
 
-class MessageTile extends StatelessWidget {
+class MessageTile extends StatefulWidget {
 
   final String _id;
   final String _timeStamp;
@@ -31,8 +31,12 @@ class MessageTile extends StatelessWidget {
     _tagOwnerId=snapshot.data["tagOwnerId"],
     _userPhotoUrl=snapshot.data["userPhotoUrl"];
 
- 
+  @override
+  _MessageTileState createState() => _MessageTileState();
+}
 
+class _MessageTileState extends State<MessageTile> with AutomaticKeepAliveClientMixin {
+  
   void _navigateOtherUserProfilePage(BuildContext context){
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -44,19 +48,17 @@ class MessageTile extends StatelessWidget {
   }
 
   void deleteTagsMessage(){
-    db.deleteTagsMessageFirestore(_tagOwnerId,_id);
+    db.deleteTagsMessageFirestore(widget._tagOwnerId,widget._id);
   }
-
-
 
   @override
   Widget build(BuildContext context) {
     final MainBloc _mainBloc = BlocProvider.of<MainBloc>(context);
     final User currentUser =_mainBloc.currentUser;
-    DateTime date = DateTime.fromMillisecondsSinceEpoch(int.parse(_timeStamp));
+    DateTime date = DateTime.fromMillisecondsSinceEpoch(int.parse(widget._timeStamp));
     return Container(
       child: ListTile(
-        onLongPress: _userId==currentUser.id? (){
+        onLongPress: widget._userId==currentUser.id? (){
           Scaffold.of(context).showSnackBar(
             SnackBar(
               content: Row(
@@ -80,12 +82,16 @@ class MessageTile extends StatelessWidget {
             _navigateOtherUserProfilePage(context);
             
           },
-          child: UserCircleAvatar(_userName,_userId),
+          child: UserCircleAvatar(widget._userName,widget._userId),
         ),
-        title: Text(_userName),
-        subtitle: Text(_content),
+        title: Text(widget._userName),
+        subtitle: Text(widget._content),
         trailing: Text("${formatDate(date,[dd, '-', mm, '-', yyyy ])}"),
       ),
     );
   }
+
+  @override
+  // TODO: implement wantKeepAlive everywhere !!
+  bool get wantKeepAlive => true;
 }

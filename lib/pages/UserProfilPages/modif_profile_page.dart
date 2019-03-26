@@ -183,7 +183,7 @@ class _ModifProfilePageState extends State<ModifProfilePage> {
   /*----------------------------------A refactorer----------------------------------------------*/ 
 
   Future<void> takePicture(BuildContext context, ImageSource source) async {
-    final File imageFile = await ImagePicker.pickImage(source: source, maxWidth: 800, maxHeight: 800);
+    final File imageFile = await ImagePicker.pickImage(source: source, maxWidth: 480, maxHeight: 480);
     await db.updateUserPhoto(widget._oldUser,imageFile);
     return;
   }

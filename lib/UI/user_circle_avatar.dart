@@ -37,11 +37,11 @@ class _UserCircleAvatarState extends State<UserCircleAvatar> {
   }
 
   @override
-  void initState() {
-    // TODO: implement initState
+  void initState()  {
+    // TODO: consomme une lecture même si url=null
     super.initState();
     print("[initState userCircleAvatar]");
-    futureUserPhoto=db.getUserPhototUrl(widget._uid);
+    futureUserPhoto= db.getUserPhototUrl(widget._uid);
   }
 
   @override

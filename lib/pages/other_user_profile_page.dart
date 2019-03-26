@@ -5,7 +5,7 @@ import 'package:tags/Bloc/main_bloc.dart';
 import 'package:tags/Models/user.dart';
 import 'package:tags/UI/circle_avatar_initiales.dart';
 import 'package:tags/pages/UserProfilPages/chat_page.dart';
-import 'package:tags/pages/UserProfilPages/post_grid_view.dart';
+import 'package:tags/pages/other_user_post_grid.dart';
 
 
 
@@ -31,7 +31,7 @@ class _OtherUserProfilePageState extends State<OtherUserProfilePage> {
             ),
             SizedBox(height: 16.0,),   
             Expanded(
-              child: PostGrid(widget._user),
+              child: OtherUserPostGrid(widget._user),
             )
           ],
         )

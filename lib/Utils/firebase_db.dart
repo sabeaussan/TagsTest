@@ -349,7 +349,9 @@ class FirebaseDB {
     }
 
     Future<String> getUserPhototUrl(String uid) async {
-      final String userPhotoUrl = await _userRefStorage.child(uid).getDownloadURL();
+      final String userPhotoUrl = await _userRefStorage.child(uid).getDownloadURL().catchError(
+        (e)=> print(e)
+      );
       return userPhotoUrl;
     }
   

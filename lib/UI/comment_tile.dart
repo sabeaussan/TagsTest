@@ -8,7 +8,7 @@ import 'package:tags/Utils/firebase_db.dart';
 
 
 
-class CommentTile extends StatelessWidget {
+class CommentTile extends StatefulWidget {
   final String _id;
   final String _postId;
   final String _tagsOwnerId; 
@@ -27,10 +27,15 @@ class CommentTile extends StatelessWidget {
     _userId=snapshot.data["userId"],
     _tagsOwnerId=snapshot.data["tagsOwnerId"];
 
-  void deleteComment(){
-    db.deleteCommentFirestore(_tagsOwnerId,_postId,_id);
-  }
+  @override
+  _CommentTileState createState() => _CommentTileState();
+}
 
+class _CommentTileState extends State<CommentTile> with AutomaticKeepAliveClientMixin{
+
+  void deleteComment(){
+    db.deleteCommentFirestore(widget._tagsOwnerId,widget._postId,widget._id);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +45,7 @@ class CommentTile extends StatelessWidget {
     return Container(
       child: ListTile(
         isThreeLine: true,
-        onLongPress: _userId==currentUser.id? (){
+        onLongPress: widget._userId==currentUser.id? (){
           Scaffold.of(context).showSnackBar(
             SnackBar(
               content: Row(
@@ -58,10 +63,14 @@ class CommentTile extends StatelessWidget {
             )
           );
         }:null,
-        leading: UserCircleAvatar(_userName,_userId),
-        title: Text(_userName),
-        subtitle: Text(_content),
+        leading: UserCircleAvatar(widget._userName,widget._userId),
+        title: Text(widget._userName),
+        subtitle: Text(widget._content),
       ),
     );
   }
+
+  @override
+  // TODO: implement wantKeepAlive
+  bool get wantKeepAlive => true;
 }
