@@ -42,7 +42,11 @@ class PostGrid extends StatelessWidget {
                   )
                 ),
               ),
-          Icon(Icons.new_releases,size: 25.0,color:Colors.deepOrange)
+          CircleAvatar(
+            child: Center(child: Icon(Icons.error,size: 25.0,color:Colors.deepOrange),),
+            backgroundColor: Colors.white,
+            radius: 12.5,
+          )
         ],
     );
   }

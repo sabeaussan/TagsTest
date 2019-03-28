@@ -89,10 +89,14 @@ class MainBloc extends BlocBase {
         if(docSnap.data["lastCommentSeen"]!=true) newComment =true;
       });
       print("--------- after check newComment --------"+newComment.toString());
-      _newEventControllerSink.add(newComment);
+      _sendNewEvent();
       _newCommentControllerSink.add(newComment);
       print("new userPostSnapshot" + snapshot.toString());
       _listUserPostControllerSink.add(snapshot);
+    }
+
+    void _sendNewEvent(){
+      _newEventControllerSink.add(newComment||newMessage);
     }
 
     
@@ -107,7 +111,7 @@ class MainBloc extends BlocBase {
         if(docSnap.data["lastMessageSeen"]!=true) newMessage =true;
       });
       print("--------- after check newMessage --------"+newMessage.toString());
-      _newEventControllerSink.add(newMessage);
+      _sendNewEvent();
       _newMessageControllerSink.add(newMessage);
       _listConvControllerSink.add(snapshot);
     }

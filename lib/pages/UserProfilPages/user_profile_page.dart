@@ -22,12 +22,13 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
 
   CachedNetworkImageProvider _currentUserPhoto;
   TabController _userProfileTabController;
-  bool _shouldDisplayOverlay = false;
   MessageBoxList _messageBoxList;
   PostGrid _postGrid;
   User currentUser;
   MainBloc _mainBloc;
   Stream<User> stream;
+  
+  
 
 
   Widget _buildTabs(User currentUser){
@@ -60,22 +61,7 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
     );
   }
 
- Widget _displayOverlayImage(CachedNetworkImageProvider image){
-
-    return Material(
-      color: Colors.black54,
-      child: InkWell(
-        child: Center(
-          child: Image(image: image,),
-        ),
-        onTap: (){
-          setState(() {
-            _shouldDisplayOverlay=!_shouldDisplayOverlay; 
-          });
-        },
-      )
-    );
-  }
+ 
 
   Future<void> _buildLogOutDialog(){
     return showDialog(
@@ -206,11 +192,7 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
             ),
             GestureDetector(
               onTap: _currentUserPhoto!=null?
-               (){
-                setState(() {
-                  _shouldDisplayOverlay=!_shouldDisplayOverlay; 
-                });
-              }
+               (){}
               :
               null ,
               child:currentUser.photoUrl!=null ? 
@@ -239,6 +221,8 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
     );
   }
 
+  
+
   @override
   void initState() {
     // TODO: implement initState
@@ -265,8 +249,11 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 _buildUserProfileColumn(currentUser,context,),
-                Text("Ta bio"),
-                SizedBox(height: 15.0),
+                ListTile(                           //Utiliser une ExpansionListTile plus tard
+                  dense: true,
+                  title:  Text(currentUser.bio),
+                ),
+                //SizedBox(height: 15.0),
               ],
            ),
           ),
@@ -295,7 +282,7 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
                   _buildTabs(snapshot.data),
                 ],
               ),
-              _shouldDisplayOverlay?_displayOverlayImage(_currentUserPhoto):Container()
+
             ],
           ),
         );

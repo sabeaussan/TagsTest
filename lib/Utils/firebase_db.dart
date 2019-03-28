@@ -237,9 +237,9 @@ class FirebaseDB {
     
   
   
-    void updateUser(User oldUser,String prenom,String nom, String userName)  {      //rename updateProfileUser
+    void updateUser(User oldUser,String prenom,String nom, String userName,String bio)  {      //rename updateProfileUser
       //Comparer a oldUser pour savoir ce qu'il faut changer exactement
-      if(oldUser.prenom ==prenom && oldUser.nom==nom && oldUser.userName==userName) return;
+      if(oldUser.prenom ==prenom && oldUser.nom==nom && oldUser.userName==userName && oldUser.bio==bio) return;
       DocumentReference userToUpdateRef = userRef.document(oldUser.id);
       Firestore.instance.runTransaction((Transaction transaction) async {
         DocumentSnapshot userToUpdateSnapshot = await transaction.get(userToUpdateRef);
@@ -248,7 +248,8 @@ class FirebaseDB {
             userToUpdateSnapshot.reference, {
             'nom': nom,
             'prenom' : prenom,
-            'userName' :userName
+            'userName' :userName,
+            'bio' : bio
             }
           ).catchError((e)=> print(e));
         }
@@ -301,9 +302,7 @@ class FirebaseDB {
       //TODO: rajouter un nom d'utilisateur dans le createUser + textField dans LoginPage
       final FirebaseUser fbUser = await _auth.createUserWithEmailAndPassword(email: mail,password: passWord);
       String id =fbUser.uid;
-      List list ;
-      list.add("vide");
-      final User user = User(mail,passWord,nom,prenom,id,userName,null,null,null,null);
+      final User user = User(mail,passWord,nom,prenom,id,userName,"",null,null,null,null);
       await db.createUserFirestore(user);
       return fbUser;
     }

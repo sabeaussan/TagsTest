@@ -24,7 +24,20 @@ class CreatePostPage extends StatefulWidget {
 
 class CreatePostPageState extends State<CreatePostPage> {
   bool _isLoading=false;
+
   TextEditingController _postDescriptionController;
+
+  Widget _displayOverlayLoading(){
+
+    return Material(
+      color: Colors.black54,
+      child: InkWell(
+        child: Center(
+          child: CircularProgressIndicator(strokeWidth: 5.0,),
+        ),
+      )
+    );
+  }
 
   Widget _buildImageContainer(){
     return AspectRatio(
@@ -97,35 +110,41 @@ class CreatePostPageState extends State<CreatePostPage> {
   Widget build(BuildContext context) {
     final MainBloc _mainBloc = BlocProvider.of<MainBloc>(context);
     final User currentUser =_mainBloc.currentUser;
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: Text(
-          "Edite ton post",
-          style: TextStyle(fontSize: 30.0, color: Colors.black),
-        ),
-        actions: <Widget>[
-            IconButton(
-             onPressed: (){
-                _createPost(currentUser,context);
-             },
-             iconSize: 40.0,
-             icon:_isLoading? 
-             CircularProgressIndicator(strokeWidth: 5.0): Icon(Icons.check_circle,color:Colors.deepOrange),
-           )
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              _buildImageContainer(),
-              _buildTextDescriptionField(context)
+    return Stack(
+      children: <Widget>[
+        Scaffold(
+          appBar: AppBar(
+            centerTitle: true,
+            title: Text(
+              "Edite ton post",
+              style: TextStyle(fontSize: 30.0, color: Colors.black),
+            ),
+            actions: <Widget>[
+                IconButton(
+                onPressed: (){
+                    _createPost(currentUser,context);
+                },
+                iconSize: 40.0,
+                icon: Icon(Icons.check_circle,color:Colors.deepOrange),
+              )
             ],
           ),
-        )
-      )
+          body: SingleChildScrollView(
+            child: Center(
+              child: 
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      _buildImageContainer(),
+                      _buildTextDescriptionField(context),
+                    ],
+                  ),
+            
+            )
+          )
+        ),
+        _isLoading?_displayOverlayLoading():Container(),
+      ],
     );
   }
 }

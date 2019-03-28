@@ -9,6 +9,7 @@ class User {
   String _photoUrl;
   String _userName;
   String _id;
+  String _bio;
   List<dynamic> _favPostId;
   List<dynamic> _favTagsId;
   List<dynamic> _favCommId;
@@ -21,6 +22,7 @@ class User {
     this._prenom,
     this._id,
     this._userName,
+    this._bio,
     this._photoUrl,
     this._favCommId,
     this._favPostId,
@@ -34,6 +36,7 @@ class User {
     _passWord=snapshot.data["password"],
     _nom=snapshot.data["nom"],
     _prenom=snapshot.data["prenom"],
+    _bio =snapshot.data["bio"],
     _userName=snapshot.data["userName"],
     _favCommId=snapshot.data["favCommId"],
     _favPostId=snapshot.data["favPostId"],
@@ -53,6 +56,7 @@ class User {
       "nom"   : this._nom,
       "prenom"       : this._prenom,
       "userName"   : this._userName,
+      "bio" : this._bio,
       "photoUrl"   : this._photoUrl,
       "favCommId"       : this._favCommId,
       "favPostId"   : this._favPostId,
@@ -65,6 +69,7 @@ class User {
   String get nom => _nom;
   String get prenom => _prenom;
   String get userName => _userName;
+  String get bio => _bio;
   String get photoUrl => _photoUrl;
   List<dynamic> get favPostId => _favPostId;
   List<dynamic> get favTagsId => _favTagsId;

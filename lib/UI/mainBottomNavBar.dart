@@ -22,11 +22,16 @@ class BottomNavBarState extends State<BottomNavBar> {
     widget._blocHomePage.numTabSink.add(index);
   }
 
-  Widget _buildNewMessageIcon(int numTab){
+  Widget _buildNewMessageIcon(){
     return Stack(
         children: <Widget>[
           Icon(Icons.person),
-          Icon(Icons.new_releases,size: 19.0,color: numTab==4 ? CupertinoColors.inactiveGray: Colors.deepOrange)
+          //TODO: en faire un élément graphique
+          CircleAvatar(
+            child: Center(child: Icon(Icons.error,size: 18.0,color:Colors.deepOrange),),
+            backgroundColor: Colors.white,
+            radius: 9,
+          )
         ],
     );
   }
@@ -40,9 +45,10 @@ class BottomNavBarState extends State<BottomNavBar> {
           builder: (BuildContext context, AsyncSnapshot<int> snapshotNumTab){
             return  StreamBuilder<bool>(
               stream: _mainBloc.newEventControllerStream,
-              initialData: _mainBloc.newMessage||_mainBloc.newComment,
+              initialData: _mainBloc.newMessage || _mainBloc.newComment,
               builder: (BuildContext context, AsyncSnapshot<bool> snapshotNewMessage){
                   print("--------- mainNavBar check newEvent --------"+snapshotNewMessage.data.toString());
+                  print("--------- mainNavBar check initEvent --------"+_mainBloc.newMessage.toString());
                   return CupertinoTabBar(
                     activeColor: Colors.deepOrange,
                     currentIndex: snapshotNumTab.data ,
@@ -51,7 +57,7 @@ class BottomNavBarState extends State<BottomNavBar> {
                       BottomNavigationBarItem(icon: Icon(Icons.location_on),title:Container()),
                       BottomNavigationBarItem(icon: IconButton(icon: Container(),onPressed: (){},),title:Container()),
                       BottomNavigationBarItem(icon: Icon(Icons.favorite),title:Container()),
-                      BottomNavigationBarItem(icon: snapshotNewMessage.data? _buildNewMessageIcon(snapshotNumTab.data) : Icon(Icons.person),title:Container()),
+                      BottomNavigationBarItem(icon: snapshotNewMessage.data? _buildNewMessageIcon() : Icon(Icons.person),title:Container()),
                     ],
                     onTap:_onItemTapped,
                   );

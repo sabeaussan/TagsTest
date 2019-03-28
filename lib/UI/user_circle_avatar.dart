@@ -3,13 +3,17 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:tags/Models/user.dart';
 import 'package:tags/Utils/firebase_db.dart';
+import 'package:tags/Utils/url_cache.dart';
 import 'dart:async';
 import 'package:tags/pages/other_user_profile_page.dart';
 
 
 class UserCircleAvatar extends StatefulWidget {
+  //TODO : utiliser un cache pour sauvegarder une liste de Map<uid;url>
+  //pour ne pas avoir à refetch à chaque fois l'url
   final _userName;
   final String _uid;
+  String _imageUrl;
 
   UserCircleAvatar(this._userName,this._uid,/*{Key key}*/)/*:super(key:key)*/;
 
@@ -41,12 +45,12 @@ class _UserCircleAvatarState extends State<UserCircleAvatar> {
     // TODO: consomme une lecture même si url=null
     super.initState();
     print("[initState userCircleAvatar]");
-    futureUserPhoto= db.getUserPhototUrl(widget._uid);
+    futureUserPhoto = UrlCache.getUrl(widget._uid);
   }
 
   @override
   Widget build(BuildContext context) {
-    print("[build userCircleAvatat]");
+    print("[build userCircleAvatar]");
     return FutureBuilder(
       future: futureUserPhoto,
       builder: (BuildContext context, AsyncSnapshot snapshot) {

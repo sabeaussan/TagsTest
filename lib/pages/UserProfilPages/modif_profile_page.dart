@@ -25,11 +25,13 @@ class _ModifProfilePageState extends State<ModifProfilePage> {
   String _prenom;
   String _nom;
   String _nomUtilisateur;
+  String _bio;
 
 //TODO: dispose les controller
   TextEditingController _nomController;
   TextEditingController _prenomController;
   TextEditingController _userNameController;
+  
 
 
   @override
@@ -136,7 +138,9 @@ class _ModifProfilePageState extends State<ModifProfilePage> {
             _buildPrenomTextField(),
             SizedBox(height: 17),
             _buildUserNameTextField(),
-          SizedBox(height: 17),
+            SizedBox(height: 17),
+            _buildBioTextFormField(widget._oldUser.bio),
+            SizedBox(height: 17),
         ],
       ),
     );
@@ -145,7 +149,7 @@ class _ModifProfilePageState extends State<ModifProfilePage> {
   void _onConfirmRaisedButtonPressed(BuildContext context) {
     if(_formKey.currentState.validate()){
       _formKey.currentState.save();
-      db.updateUser(widget._oldUser, _prenom, _nom, _nomUtilisateur);
+      db.updateUser(widget._oldUser, _prenom, _nom, _nomUtilisateur,_bio);
       //print("2");     //s'execute avant la fin de db.updateUser pas bon 
       Navigator.of(context).pop();
     }
@@ -229,6 +233,31 @@ class _ModifProfilePageState extends State<ModifProfilePage> {
 
   void _changeUserPhoto(BuildContext context){
     openPicker(context);
+  }
+
+  Widget _buildBioTextFormField(String currentBio){
+    return Container(
+      color: Colors.grey[50],
+      width: MediaQuery.of(context).size.width-80.0,
+      child: TextFormField(
+              maxLength: 170,
+              maxLengthEnforced: true ,
+              initialValue: currentBio,
+              onSaved: (String val){
+                _bio=val;
+              },
+              decoration: InputDecoration(
+              labelText: "bio",
+              focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.deepOrange)),
+              border: UnderlineInputBorder(),
+            ),
+              keyboardType: TextInputType.multiline,
+              maxLines: null,
+              cursorColor: Colors.deepOrange,
+            
+          ),
+    );
   }
 
   @override
