@@ -66,14 +66,9 @@ class CreatePostPageState extends State<CreatePostPage> {
         ui.Image image = snapshot.data;
         _imageWidth =image.width;
         _imageHeight=image.height;
-        return _imageWidth/_imageHeight>0.83 ?
-        Center(
-          heightFactor: 1.2,
-          child: Image.file(widget._imageFile),
-        )
-        :
+        return 
         AspectRatio(
-            aspectRatio: 0.83,
+            aspectRatio:_imageWidth/_imageHeight>0.83 ? _imageWidth/_imageHeight : 0.83,
             child: Container(
               decoration: BoxDecoration(
                 image: DecorationImage(

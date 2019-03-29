@@ -84,7 +84,7 @@ class TagsTile extends StatelessWidget {
     return (
       ListTile(
         onTap: (){
-          if(_tags.mode==PRIVATE_MODE){
+          if(_tags.mode==PRIVATE_MODE && !_isFav){
             if(_isNear) _buildPassWordDialog(context, false);
             else {
               if(_isFav) _buildPassWordDialog(context,true);

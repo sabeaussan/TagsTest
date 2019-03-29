@@ -1,6 +1,8 @@
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:tags/Bloc/bloc_provider.dart';
+import 'package:tags/Bloc/main_bloc.dart';
 import 'package:tags/Models/user.dart';
 import 'package:tags/Utils/firebase_db.dart';
 import 'package:tags/Utils/url_cache.dart';
@@ -11,9 +13,10 @@ import 'package:tags/pages/other_user_profile_page.dart';
 class UserCircleAvatar extends StatefulWidget {
   //TODO : utiliser un cache pour sauvegarder une liste de Map<uid;url>
   //pour ne pas avoir à refetch à chaque fois l'url
-  final _userName;
+  final String _userName;
   final String _uid;
   String _imageUrl;
+  
 
   UserCircleAvatar(this._userName,this._uid,/*{Key key}*/)/*:super(key:key)*/;
 
@@ -23,6 +26,8 @@ class UserCircleAvatar extends StatefulWidget {
 
 class _UserCircleAvatarState extends State<UserCircleAvatar> {
   Future<String> futureUserPhoto;     //TODO:A utiliser partout sans moderation !!!!
+  User _currentUser;
+  MainBloc _mainBloc;
 
   String getInitiales(){
     String initiales = widget._userName[0];
@@ -45,11 +50,24 @@ class _UserCircleAvatarState extends State<UserCircleAvatar> {
     // TODO: consomme une lecture même si url=null
     super.initState();
     print("[initState userCircleAvatar]");
-    futureUserPhoto = UrlCache.getUrl(widget._uid);
+    _mainBloc = BlocProvider.of<MainBloc>(context);
+    _currentUser =_mainBloc.currentUser;
+    if(_currentUser.id==widget._uid){
+      print("---c'est ma photo !!----");
+      futureUserPhoto= Future((){
+        return _currentUser.photoUrl;
+      });
+    }
+    else{
+      print("---c'est pas ma photo !!----");
+      futureUserPhoto = UrlCache.getUrl(widget._uid);
+    }
+    
   }
 
   @override
   Widget build(BuildContext context) {
+
     print("[build userCircleAvatar]");
     return FutureBuilder(
       future: futureUserPhoto,

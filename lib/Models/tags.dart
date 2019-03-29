@@ -9,6 +9,7 @@ class Tags {
 
   String _name;
   String _creatorName;
+  String _creatorId;
   String _timeStamp;
   String _id;
   double _lat;
@@ -26,6 +27,7 @@ class Tags {
   Tags(
     this._name,
     this._creatorName,
+    this._creatorId,
     this._timeStamp,
     this._lat,
     this._long,
@@ -43,6 +45,7 @@ class Tags {
       "id"  : this._id,
       "name" : this._name,
       "creatorName"  : this._creatorName,
+      "creatorId"  : this._creatorId,
       "timeStamp"   : this._timeStamp,
       "lat"       : this._lat,
       "long" : this._long,
@@ -58,6 +61,7 @@ class Tags {
 
   String get name => _name;
   String get creatorName => _creatorName;
+  String get creatorId => _creatorId;
   String get timeStamp =>_timeStamp;
   String get id => _id;
   double get lat => _lat;
@@ -79,6 +83,7 @@ class Tags {
     _name=snapshot.data["name"],
     _timeStamp=snapshot.data["timeStamp"],
     _creatorName=snapshot.data["creatorName"],
+    _creatorId=snapshot.data["creatorId"],
     _lat=snapshot.data["lat"],
     _long=snapshot.data["long"],
     _nbFav=snapshot.data["nbFav"],

@@ -147,8 +147,9 @@ class _CommentsPageState extends State<CommentsPage> {
             );
           }
           return Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                Flexible(
+                  Expanded(
                   child: Scrollbar(
                     child: Container(
                       child: _buildListView(snapshot.data),

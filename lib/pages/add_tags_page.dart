@@ -192,9 +192,9 @@ class _AddTagsPageState extends State<AddTagsPage> {
       print(_tagsPassWordController.text);
       Tags newTag;
       groupValue==PUBLIC_MODE?
-      newTag = Tags(_tagsNameController.text, user.userName, null, 53.0, 80, 0, 0, 0,groupValue,switchValue,valueC,null)
+      newTag = Tags(_tagsNameController.text, user.userName,user.id, db.timeStamp(), 53.0, 80, 0, 0, 0,groupValue,switchValue,valueC,null)
       :
-      newTag = Tags(_tagsNameController.text, user.userName, null, 53.0, 80, 0, 0, 0,groupValue,switchValue,valueC,_tagsPassWordController.text);
+      newTag = Tags(_tagsNameController.text, user.userName, user.id,db.timeStamp(), 53.0, 80, 0, 0, 0,groupValue,switchValue,valueC,_tagsPassWordController.text);
       newTag = await db.createTag(newTag, user);
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(

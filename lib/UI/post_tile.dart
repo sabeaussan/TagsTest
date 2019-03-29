@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Bloc/main_bloc.dart';
 import 'package:tags/Models/user.dart';
-import 'package:tags/Models/userPost.dart';
 
 import 'package:tags/UI/user_circle_avatar.dart';
 import 'package:tags/Utils/firebase_db.dart';
@@ -98,21 +97,8 @@ class PostTileState extends State<PostTile> with AutomaticKeepAliveClientMixin  
     return Column(
       children: <Widget>[
         _tileHeader(context,currentUser),
-        aspectRatio>0.80?
-        Center(
-          child: CachedNetworkImage(
-                width:MediaQuery.of(context).size.width ,
-                alignment:FractionalOffset.topCenter,
-                imageUrl: widget._imageUrl,
-                placeholder:Container(
-                        child: CircularProgressIndicator(),
-                    ),
-                fit: BoxFit.fitWidth ,
-                )
-        )
-        :
         AspectRatio(
-          aspectRatio: 0.80,
+          aspectRatio:aspectRatio>0.83? aspectRatio: 0.83,
             child:Center(
               child:CachedNetworkImage(
                 width:MediaQuery.of(context).size.width ,
