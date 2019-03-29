@@ -131,7 +131,7 @@ class _OtherUserProfilePageState extends State<OtherUserProfilePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 _buildUserProfileColumn(context),
-                Text("ma bio"),
+                Text(widget._user.bio),
                 SizedBox(height: 15.0),
               ],
            ),
