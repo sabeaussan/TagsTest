@@ -28,6 +28,8 @@ class CreatePostPage extends StatefulWidget {
 
 class CreatePostPageState extends State<CreatePostPage> {
   bool _isLoading=false;
+  int _imageWidth;
+  int _imageHeight;
 
   Future<ui.Image> _getImage() {
     Completer<ui.Image> completer = new Completer<ui.Image>();
@@ -62,10 +64,11 @@ class CreatePostPageState extends State<CreatePostPage> {
           );
         }
         ui.Image image = snapshot.data;
-        final int width =image.width;
-        final int height =image.height;
-        return width/height>0.83 ?
+        _imageWidth =image.width;
+        _imageHeight=image.height;
+        return _imageWidth/_imageHeight>0.83 ?
         Center(
+          heightFactor: 1.2,
           child: Image.file(widget._imageFile),
         )
         :
@@ -92,7 +95,7 @@ class CreatePostPageState extends State<CreatePostPage> {
       setState(() {
         _isLoading=true; 
       });
-      final Post newPost = Post(null, currentUser, _postDescriptionController.text, null, 0, widget._tags, 0, timeStamp());
+      final Post newPost = Post(null, currentUser, _postDescriptionController.text, null, 0, widget._tags, 0,_imageHeight,_imageWidth ,timeStamp());
       await db.createPostFirestore(newPost,widget._imageFile).then((_){
         _isLoading=false;
       });

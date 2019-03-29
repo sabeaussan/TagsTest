@@ -31,6 +31,8 @@ class PostTile extends StatefulWidget {
   final String _timeStamp;
   final int _nbComments;
   final int _nbLikes;
+  final int _imageWidth;
+  final int _imageHeight;
   final String _imageUrl;
 
 
@@ -55,7 +57,9 @@ class PostTile extends StatefulWidget {
     _description=snapshot.data["description"],
     _nbComments=snapshot.data["nbComments"],
     _ownerId=snapshot.data["ownerId"],
-    _nbLikes=snapshot.data["nbLikes"];
+    _nbLikes=snapshot.data["nbLikes"],
+    _imageWidth=snapshot.data["imageWidth"],
+    _imageHeight=snapshot.data["imageHeight"];
   
 
 
@@ -90,9 +94,23 @@ class PostTileState extends State<PostTile> with AutomaticKeepAliveClientMixin  
 
   @override
   Widget build(BuildContext context) {
+    final double aspectRatio =widget._imageWidth/widget._imageHeight;
     return Column(
       children: <Widget>[
         _tileHeader(context,currentUser),
+        aspectRatio>0.80?
+        Center(
+          child: CachedNetworkImage(
+                width:MediaQuery.of(context).size.width ,
+                alignment:FractionalOffset.topCenter,
+                imageUrl: widget._imageUrl,
+                placeholder:Container(
+                        child: CircularProgressIndicator(),
+                    ),
+                fit: BoxFit.fitWidth ,
+                )
+        )
+        :
         AspectRatio(
           aspectRatio: 0.80,
             child:Center(

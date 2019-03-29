@@ -11,6 +11,8 @@ class Post {
   String _timeStamp;
   int _nbComments;
   int _nbLikes;
+  int _imageWidth;
+  int _imageHeight;
 
 
   Post(
@@ -21,6 +23,8 @@ class Post {
     this._nbLikes,
     this._tagOwner,
     this._nbComments,
+    this._imageHeight,
+    this._imageWidth,
     this._timeStamp
   );
 
@@ -39,7 +43,9 @@ class Post {
       "ownerId"   : this._creator.id,
       "userPhotoUrl"   : this._creator.photoUrl,
       "nbLikes"       : this._nbLikes,
-      "nbComments"   : this._nbComments
+      "nbComments"   : this._nbComments,
+      "imageWidth"  : this._imageWidth,
+      "imageHeight"   : this._imageHeight
     };
   }
 
@@ -51,6 +57,8 @@ class Post {
   String get timeStamp =>_timeStamp;
   int get nbComments =>_nbComments;
   int get nbLikes =>_nbLikes;
+  int get imageWidth =>_imageWidth;
+  int get imageHeight =>_imageHeight;
 
   void setId(String postId){
     this._id = postId;
