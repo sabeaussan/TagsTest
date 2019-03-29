@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Bloc/main_bloc.dart';
 import 'package:tags/Models/post.dart';
+//import 'package:flutter/services.dart';
+import 'dart:ui' as ui;
 import 'dart:io';
 
 import 'package:tags/Models/tags.dart';
@@ -25,6 +29,15 @@ class CreatePostPage extends StatefulWidget {
 class CreatePostPageState extends State<CreatePostPage> {
   bool _isLoading=false;
 
+  Future<ui.Image> _getImage() {
+    Completer<ui.Image> completer = new Completer<ui.Image>();
+    new FileImage(widget._imageFile)
+      .resolve(new ImageConfiguration())
+      .addListener((ImageInfo info, bool _) => completer.complete(info.image));
+    return completer.future;
+  }
+
+
   TextEditingController _postDescriptionController;
 
   Widget _displayOverlayLoading(){
@@ -40,7 +53,23 @@ class CreatePostPageState extends State<CreatePostPage> {
   }
 
   Widget _buildImageContainer(){
-    return AspectRatio(
+    return FutureBuilder(
+      future: _getImage(),
+      builder: (BuildContext context, AsyncSnapshot snapshot) {
+        if(!snapshot.hasData) {
+          return Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+        ui.Image image = snapshot.data;
+        final int width =image.width;
+        final int height =image.height;
+        return width/height>0.83 ?
+        Center(
+          child: Image.file(widget._imageFile),
+        )
+        :
+        AspectRatio(
             aspectRatio: 0.83,
             child: Container(
               decoration: BoxDecoration(
@@ -52,6 +81,8 @@ class CreatePostPageState extends State<CreatePostPage> {
                 ),
             )
           );
+      },
+    );
   }
 
   String timeStamp() => DateTime.now().millisecondsSinceEpoch.toString();
