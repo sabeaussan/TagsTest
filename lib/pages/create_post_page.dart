@@ -30,6 +30,7 @@ class CreatePostPageState extends State<CreatePostPage> {
   bool _isLoading=false;
   int _imageWidth;
   int _imageHeight;
+  FocusNode _focusNode;
 
   Future<ui.Image> _getImage() {
     Completer<ui.Image> completer = new Completer<ui.Image>();
@@ -86,9 +87,10 @@ class CreatePostPageState extends State<CreatePostPage> {
   String timeStamp() => DateTime.now().millisecondsSinceEpoch.toString();
 
   void _createPost(User currentUser,BuildContext context) async{
-    if(_postDescriptionController.text.trim().length!=0){
+    if(_postDescriptionController.text.trim().length!=0){ // TODO: pas besoin de mettre du texte !!!
       setState(() {
-        _isLoading=true; 
+        _isLoading=true;
+        _focusNode.unfocus(); 
       });
       final Post newPost = Post(null, currentUser, _postDescriptionController.text, null, 0, widget._tags, 0,_imageHeight,_imageWidth ,timeStamp());
       await db.createPostFirestore(newPost,widget._imageFile).then((_){
@@ -103,6 +105,7 @@ class CreatePostPageState extends State<CreatePostPage> {
     return Container(
       width: MediaQuery.of(context).size.width-40.0,
         child: TextField(
+          focusNode: _focusNode,
           controller: _postDescriptionController,
           style: TextStyle(fontSize: 16.0,color: Colors.black),
           decoration: InputDecoration(
@@ -126,12 +129,14 @@ class CreatePostPageState extends State<CreatePostPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    _focusNode = FocusNode();
     _postDescriptionController =TextEditingController();
   }
 
   @override
   void dispose() {
     _postDescriptionController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 

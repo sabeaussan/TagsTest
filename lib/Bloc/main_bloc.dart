@@ -76,7 +76,7 @@ class MainBloc extends BlocBase {
       _currentUser = await db.getCurrentUser();
       db.userRef.document(currentUser.id).snapshots().listen(onCurrentUserUpdate);
       Firestore.instance.collection("User").document(currentUser.id).collection("Discussion").orderBy("timeStamp",descending: true).snapshots().listen(_onNewMessage);
-      Firestore.instance.collection("User").document(currentUser.id).collection("UserPost").snapshots().listen(_onNewComment);
+      Firestore.instance.collection("User").document(currentUser.id).collection("UserPost").orderBy("timeStamp",descending : true).snapshots().listen(_onNewComment);
     }
 
     void _onNewComment(QuerySnapshot snapshot){

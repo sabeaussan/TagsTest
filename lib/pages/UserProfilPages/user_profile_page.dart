@@ -27,6 +27,21 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
   User currentUser;
   MainBloc _mainBloc;
   Stream<User> stream;
+
+  Widget _buildNewMessageIcon(IconData icon){
+    return Stack(
+        children: <Widget>[
+          Icon(icon,size: 37.0,),
+          //TODO: en faire un élément graphique
+          //et gérer ici le snapshot pour savoir quoi renvoyer
+          CircleAvatar(
+            child: Center(child: Icon(Icons.error,size: 20.0,color:Colors.deepOrange),),
+            backgroundColor: Color(0xFFF8F8F8),
+            radius: 10.0,
+          )
+        ],
+    );
+  }
   
   
 
@@ -43,8 +58,20 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
               labelPadding: EdgeInsets.only(bottom: 10.0),
               controller:_userProfileTabController,
               tabs: <Widget>[
-                Icon(Icons.image,size: 37.0,),
-                Icon(Icons.mail,size: 37.0)
+                StreamBuilder<bool>(
+                  stream: _mainBloc.newCommentControllerStream ,
+                  initialData: _mainBloc.newComment ,
+                  builder: (BuildContext context, AsyncSnapshot<bool> snapshotComment){
+                    return snapshotComment.data? _buildNewMessageIcon(Icons.image) :  Icon(Icons.image,size: 37.0,);
+                  },
+                ),
+                StreamBuilder<bool>(
+                  stream:_mainBloc.newMessageControllerStream ,
+                  initialData:  _mainBloc.newMessage ,
+                  builder: (BuildContext context, AsyncSnapshot<bool> snapshotMessage){
+                    return snapshotMessage.data? _buildNewMessageIcon(Icons.mail):Icon(Icons.mail,size: 37.0);
+                  },
+                ),
               ],
             ),
             Expanded(

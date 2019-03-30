@@ -116,7 +116,10 @@ class FirebaseDB {
       DocumentSnapshot postToUpdateSnapshot = await transaction.get(postDocRef);    //compte comme une lecture, voir si il y & pas moyen 
         if(postToUpdateSnapshot.exists){
           await transaction.update(
-            postToUpdateSnapshot.reference,<String, dynamic>{"lastCommentSeen" : hasBeenSeen}
+            postToUpdateSnapshot.reference,<String, dynamic>{
+              "lastCommentSeen" : hasBeenSeen,
+              "timeStamp"       : timeStamp()
+              }
           ).catchError((e)=> print(e));
         }
       });

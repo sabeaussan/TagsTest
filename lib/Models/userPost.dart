@@ -7,6 +7,7 @@ class UserPost {
   String _tagOwnerId;
   String _id;
   String _imageUrl;
+  String _timeStamp;
   bool _lastCommentSeen;
 
 
@@ -15,7 +16,8 @@ class UserPost {
     this._creatorId,
     this._imageUrl,
     this._tagOwnerId,
-    this._lastCommentSeen
+    this._lastCommentSeen,
+    this._timeStamp
   );
 
   UserPost.fromPost(Post post):
@@ -23,7 +25,8 @@ class UserPost {
     _tagOwnerId = post.tagOwner.id,
     _imageUrl = post.imageUrl,
     _creatorId = post.creator.id,
-    _lastCommentSeen = true;
+    _lastCommentSeen = true,
+    _timeStamp = post.timeStamp;      //pose problème
 
 
     UserPost.fromDocumentSnaptshot(DocumentSnapshot snapshot):
@@ -31,7 +34,8 @@ class UserPost {
     _imageUrl = snapshot.data["imageUrl"],
     _creatorId = snapshot.data["ownerId"],
     _tagOwnerId = snapshot.data["tagsId"],
-    _lastCommentSeen = snapshot.data["lastCommentSeen"];
+    _lastCommentSeen = snapshot.data["lastCommentSeen"],
+    _timeStamp = snapshot.data["timeStamp"];
 
 
   toJson () {
@@ -40,7 +44,8 @@ class UserPost {
       "tagsId" : this._tagOwnerId,
       "imageUrl" : this._imageUrl,
       "ownerId"   : this._creatorId,
-      "lastCommentSeen" : this._lastCommentSeen
+      "lastCommentSeen" : this._lastCommentSeen,
+      "timeStamp"   : this._timeStamp
     };
   }
 
@@ -48,6 +53,7 @@ class UserPost {
   String get tagOwnerId => _tagOwnerId;
   String get id =>_id;
   String get imageUrl => _imageUrl;
+  String get timeStamp => _timeStamp;
   bool get lastCommentSeen => _lastCommentSeen;
 
   void setId(String postId){

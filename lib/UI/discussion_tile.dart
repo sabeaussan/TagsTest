@@ -67,9 +67,9 @@ class _DiscussionTileState extends State<DiscussionTile> {
       child: ListTile(
         trailing: widget._lastMessageSeen? Container(width: 0.0,height: 0.0,)
         :CircleAvatar(
-            child: Center(child: Icon(Icons.error,size: 18.0,color:Colors.deepOrange),),
-            backgroundColor: Colors.white,
-            radius: 9,
+            child: Center(child: Icon(Icons.error,size: 20.0,color:Colors.deepOrange),),
+            backgroundColor: Color(0xFFF8F8F8),
+            radius: 10.0,
           ),
         onLongPress: (){
           Scaffold.of(context).showSnackBar(

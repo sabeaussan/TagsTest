@@ -29,7 +29,7 @@ class BottomNavBarState extends State<BottomNavBar> {
           //TODO: en faire un élément graphique
           CircleAvatar(
             child: Center(child: Icon(Icons.error,size: 18.0,color:Colors.deepOrange),),
-            backgroundColor: Colors.white,
+            backgroundColor: Color(0xFFF8F8F8),
             radius: 9,
           )
         ],

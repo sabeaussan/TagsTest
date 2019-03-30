@@ -44,7 +44,7 @@ class PostGrid extends StatelessWidget {
               ),
           CircleAvatar(
             child: Center(child: Icon(Icons.error,size: 25.0,color:Colors.deepOrange),),
-            backgroundColor: Colors.white,
+            backgroundColor: Color(0xFFF8F8F8),
             radius: 12.5,
           )
         ],
