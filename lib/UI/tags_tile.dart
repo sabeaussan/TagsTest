@@ -8,7 +8,7 @@ class TagsTile extends StatelessWidget {
   final String _distance;
   final bool _isNear;
   final bool _isFav;
-  TextEditingController _tagsPassWordController=TextEditingController();
+  final GlobalKey<FormFieldState> _keyPassWord = GlobalKey<FormFieldState>();
 
   
 
@@ -18,8 +18,11 @@ class TagsTile extends StatelessWidget {
     return Center(
               child: Container(
               width: MediaQuery.of(context).size.width-80.0,
-              child: TextField(     //TODO:Faire un formField pour le validator
-                controller: _tagsPassWordController,
+              child: TextFormField(     //TODO:Faire un formField pour le validator
+                key: _keyPassWord,
+                validator: (String input){
+                  if(_tags.passWord!=input) return "mauvais mot de passe";
+                },
                 style: TextStyle(fontSize: 15.0,color: Colors.black),
                 decoration: InputDecoration(
                   focusedBorder: UnderlineInputBorder(
@@ -57,7 +60,7 @@ class TagsTile extends StatelessWidget {
               FlatButton(
                 child: Text("ok",style: TextStyle(fontSize: 20.0),),
                 onPressed:() async{
-                  if(_tags.passWord==_tagsPassWordController.text){
+                  if(_keyPassWord.currentState.validate()){
                     Navigator.of(context).pop();
                     _navigateTagsPage(context,b);
                   }

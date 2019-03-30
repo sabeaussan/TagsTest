@@ -135,7 +135,7 @@ class PostTileState extends State<PostTile> with AutomaticKeepAliveClientMixin  
     DateTime date = DateTime.fromMillisecondsSinceEpoch(int.parse(widget._timeStamp));
     return ListTile(
       onTap:_toggleFavIcon,
-      subtitle: Text("${formatDate(date,[dd, '-', mm, '-', yyyy ])}"),
+      subtitle: widget._type==COMMENT? Text(widget._tagsName) : Text("${formatDate(date,[dd, '-', mm, '-', yyyy ])}"),
       leading:_userCircleAvatar,
       title: Text(widget._userNamePost,style: TextStyle(fontSize: 18.0,fontWeight: FontWeight.bold)),
       trailing: !(widget._type==EDIT)? Container(width: MediaQuery.of(context).size.width*0.30,

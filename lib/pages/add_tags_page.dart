@@ -19,12 +19,20 @@ class _AddTagsPageState extends State<AddTagsPage> {
   bool switchValue=false;
   TextEditingController _tagsNameController;
   TextEditingController _tagsPassWordController;
+  GlobalKey<FormFieldState> _keyTitle = GlobalKey<FormFieldState>();
+  GlobalKey<FormFieldState> _keyPassWord = GlobalKey<FormFieldState>();
+  String _passWord;
+  String _title;
 
   Widget _buildTextNameField(){
     return Center(
               child: Container(
               width: MediaQuery.of(context).size.width-80.0,
-              child: TextField(     //TODO:Faire un formField 
+              child: TextFormField(     //TODO:Faire un formField 
+                key: _keyTitle,
+                validator: (String input){
+                  if(input.trim().length<2) return("Nom trop court, au moins 2 caractère recquis");
+                },
                 controller: _tagsNameController,
                 style: TextStyle(fontSize: 20.0,color: Colors.black),
                 decoration: InputDecoration(
@@ -51,7 +59,12 @@ class _AddTagsPageState extends State<AddTagsPage> {
     return Center(
               child: Container(
               width: MediaQuery.of(context).size.width-80.0,
-              child: TextField(     //TODO:Faire un formField pour le validator
+              child: TextFormField(     //TODO:Faire un formField pour le validator
+                key: _keyPassWord,
+                validator:(String input){
+                  if(input.trim().length<4) return ("Le mot de passe doit faire au moins 4 caractères");
+                }
+                ,
                 controller: _tagsPassWordController,
                 style: TextStyle(fontSize: 15.0,color: Colors.black),
                 decoration: InputDecoration(
@@ -186,10 +199,11 @@ class _AddTagsPageState extends State<AddTagsPage> {
 
   void _onCreateTags(User user,BuildContext context)async {
     //TODO:gérer tous ça dans le bloc associé à cette page
-    //TODO: faire un pushAndReplace par homePage
-    if(_tagsNameController.text.trim().length!=null){
-      print(_tagsNameController.text);
-      print(_tagsPassWordController.text);
+    final bool assertion = groupValue==PRIVATE_MODE?
+    _keyTitle.currentState.validate() && _keyPassWord.currentState.validate() 
+    :
+    _keyTitle.currentState.validate();
+    if(assertion){
       Tags newTag;
       groupValue==PUBLIC_MODE?
       newTag = Tags(_tagsNameController.text, user.userName,user.id, db.timeStamp(), 53.0, 80, 0, 0, 0,groupValue,switchValue,valueC,null)
