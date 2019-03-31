@@ -12,6 +12,7 @@ class BlocTagsPage extends  BlocBase {
 
   final Tags _tag;
   Tags get tags => _tag;
+  Set<DocumentSnapshot> _snapshotTagMessageList=Set<DocumentSnapshot>();
 
   //liste contient les deux pages d'un tags
   List<Widget> _listPage;
@@ -39,7 +40,7 @@ class BlocTagsPage extends  BlocBase {
 
 
   BlocTagsPage(this._tag,keyGallery,keyChat) {
-    _listPage=[TagsGallery(_tag,key: keyGallery,),TagsChat(_tag,key:keyChat ,)];
+    _listPage=[TagsGallery(_tag,key: keyGallery,),TagsChat(_tag,_snapshotTagMessageList,key:keyChat ,)];
     numTabStream.listen(_onTabChange);
   }
 
