@@ -47,8 +47,6 @@ class BottomNavBarState extends State<BottomNavBar> {
               stream: _mainBloc.newEventControllerStream,
               initialData: _mainBloc.newMessage || _mainBloc.newComment,
               builder: (BuildContext context, AsyncSnapshot<bool> snapshotNewMessage){
-                  print("--------- mainNavBar check newEvent --------"+snapshotNewMessage.data.toString());
-                  print("--------- mainNavBar check initEvent --------"+_mainBloc.newMessage.toString());
                   return CupertinoTabBar(
                     activeColor: Colors.deepOrange,
                     currentIndex: snapshotNumTab.data ,

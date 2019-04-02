@@ -24,7 +24,7 @@ class TagsChat extends StatefulWidget {
 class TagsChatState extends State<TagsChat>{
 
   ScrollController _scrollController;
-  
+  double lastExtent=0.0;
   
   
   
@@ -33,7 +33,15 @@ class TagsChatState extends State<TagsChat>{
 
   void _fetchMoreMessage() async {
     if(_scrollController.position.pixels==_scrollController.position.maxScrollExtent){
-        widget._blocTagPage.fetchMoreContentControllerSink.add(FetchMoreEvent());
+      if(lastExtent!=_scrollController.position.maxScrollExtent){
+        print("--------------------FetchMoreMessageEvent triggered----------------");
+        print("position : "+_scrollController.position.pixels.toString());
+        print("maxExtent : "+_scrollController.position.pixels.toString());
+        print("lastExtent : "+lastExtent.toString());
+        lastExtent = _scrollController.position.maxScrollExtent;
+        widget._blocTagPage.fetchMoreMessageControllerSink.add(FetchMoreTagMessageEvent());
+      }
+        
     }
   }
 
@@ -44,6 +52,28 @@ class TagsChatState extends State<TagsChat>{
     print("---------[initState tagsChat]-----------");
     _scrollController = ScrollController();
     _scrollController.addListener(_fetchMoreMessage);
+    
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    _scrollController.removeListener(_fetchMoreMessage);
+    _scrollController.dispose();
+  }
+
+  Widget _buildLoadingIndicator(bool isLoading){
+    return Padding(
+    padding: const EdgeInsets.all(12.0),
+    child: Center(
+      child: Opacity(
+        opacity: isLoading ? 1.0 : 0.0,
+        child: CircularProgressIndicator(),
+      ),
+    ),
+  );
+
   }
   
   
@@ -65,21 +95,16 @@ class TagsChatState extends State<TagsChat>{
           }
         print("******[stb tagsChat] trigered********* "+listSnapshot.data.length.toString());
         return StreamBuilder(
-          stream: widget._blocTagPage.loadindControllerStream ,
+          stream: widget._blocTagPage.loadingPostControllerStream ,
           initialData: false ,
           builder: (BuildContext context, AsyncSnapshot snapshot){
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                snapshot.data?  CircularProgressIndicator() : Container(width: 0.0,height: 0.0,),
-                Expanded(
-                  child: ListView.builder(
+            return ListView.builder(
                   controller: _scrollController,
-                  padding: EdgeInsets.only(top: 70.0),
                   reverse: true,
-                  itemCount: listSnapshot.data.length,
+                  itemCount: listSnapshot.data.length+1,
                   addAutomaticKeepAlives: true,
                   itemBuilder: (BuildContext context, int index) {
+                    if(index==listSnapshot.data.length) return  _buildLoadingIndicator(snapshot.data);
                     return Column(
                       children: <Widget>[
                         MessageTile.fromDocumentSnapshot(listSnapshot.data[index]),
@@ -87,10 +112,7 @@ class TagsChatState extends State<TagsChat>{
                       ],
                     );
                   }
-                ),
-                )
-              ],
-            );
+                );
           },
         );
       }

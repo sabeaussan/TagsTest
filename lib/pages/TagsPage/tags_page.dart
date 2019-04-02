@@ -153,7 +153,7 @@ class _TagsPageState extends State<TagsPage> {
           //ce streamBuilder reçoit les pages à afficher entre gallery et chat
           //les snapshot sont eux même dans un streamBuilder qui construit la list via Firestore
           stream: _blocTagsPage.widgetPageStream,
-          initialData: TagsGallery(widget._tags,key: keyGallery,),
+          initialData: TagsGallery(widget._tags,_blocTagsPage,key: keyGallery,),
           builder: (BuildContext context, AsyncSnapshot<Widget> snapshot) {
             return _buildListDisplayedAndInputTile(snapshot);
           },

@@ -82,16 +82,11 @@ class MainBloc extends BlocBase {
     void _onNewComment(QuerySnapshot snapshot){
       newComment=false;
       userPostSnapshot=snapshot;
-      print("----------[_onNewComment] triggered-------------");
       snapshot.documents.forEach((DocumentSnapshot docSnap){
-        print(docSnap.documentID);
-        print(docSnap.data["lastCommentSeen"]);
         if(docSnap.data["lastCommentSeen"]!=true) newComment =true;
       });
-      print("--------- after check newComment --------"+newComment.toString());
       _sendNewEvent();
       _newCommentControllerSink.add(newComment);
-      print("new userPostSnapshot" + snapshot.toString());
       _listUserPostControllerSink.add(snapshot);
     }
 
@@ -104,13 +99,9 @@ class MainBloc extends BlocBase {
     void _onNewMessage(QuerySnapshot snapshot){
       newMessage=false;
       userDiscussionSnapshot=snapshot;
-      print("----------[_onNewMessage] triggered-------------");
       snapshot.documents.forEach((DocumentSnapshot docSnap){
-        print(docSnap.documentID);
-        print(docSnap.data["lastMessageSeen"]);
         if(docSnap.data["lastMessageSeen"]!=true) newMessage =true;
       });
-      print("--------- after check newMessage --------"+newMessage.toString());
       _sendNewEvent();
       _newMessageControllerSink.add(newMessage);
       _listConvControllerSink.add(snapshot);

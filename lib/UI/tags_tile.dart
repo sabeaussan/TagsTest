@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tags/Models/tags.dart';
+import 'package:tags/UI/user_circle_avatar.dart';
 import 'package:tags/pages/TagsPage/tags_page.dart';
 
 
@@ -86,6 +87,7 @@ class TagsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return (
       ListTile(
+        leading: UserCircleAvatar(_tags.creatorName,_tags.creatorId),
         onTap: (){
           if(_tags.mode==PRIVATE_MODE && !_isFav){
             if(_isNear) _buildPassWordDialog(context, false);
@@ -123,7 +125,6 @@ class TagsTile extends StatelessWidget {
               ],
             ),
         title: Row(
-          //mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
             Text(_tags.name,style: TextStyle(fontWeight: FontWeight.bold),),
             SizedBox(width: 15.0,),

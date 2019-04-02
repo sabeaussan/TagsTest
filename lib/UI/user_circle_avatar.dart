@@ -49,17 +49,14 @@ class _UserCircleAvatarState extends State<UserCircleAvatar> {
   void initState()  {
     // TODO: consomme une lecture même si url=null
     super.initState();
-    print("[initState userCircleAvatar]");
     _mainBloc = BlocProvider.of<MainBloc>(context);
     _currentUser =_mainBloc.currentUser;
     if(_currentUser.id==widget._uid){
-      print("---c'est ma photo !!----");
       futureUserPhoto= Future((){
         return _currentUser.photoUrl;
       });
     }
     else{
-      print("---c'est pas ma photo !!----");
       futureUserPhoto = UrlCache.getUrl(widget._uid);
     }
     
@@ -68,7 +65,6 @@ class _UserCircleAvatarState extends State<UserCircleAvatar> {
   @override
   Widget build(BuildContext context) {
 
-    print("[build userCircleAvatar]");
     return FutureBuilder(
       future: futureUserPhoto,
       builder: (BuildContext context, AsyncSnapshot snapshot) {
