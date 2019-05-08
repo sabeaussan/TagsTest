@@ -25,7 +25,8 @@ dependencies:
   firebase_storage: ^1.0.4
   cached_network_image: ^0.5.1
   date_format: ^1.0.6
-  #firebase_core: ^0.2.5+1
+  google_maps_flutter: ^0.0.3+3
+  firebase_core: ^0.2.5+1
   #flutter_range_slider: "^1.1.0"
 
 dev_dependencies:

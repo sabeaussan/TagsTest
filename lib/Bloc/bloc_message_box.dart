@@ -4,7 +4,6 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
-import 'package:tags/Models/discussion.dart';
 import 'package:tags/Models/user.dart';
 
 class BlocMessageBoxPage extends BlocBase{
