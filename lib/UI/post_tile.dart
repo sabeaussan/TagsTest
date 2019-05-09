@@ -45,7 +45,7 @@ class PostTile extends StatefulWidget {
     this._type=postType;
   }
 
-  PostTile.fromDocumentSnaptshot(DocumentSnapshot snapshot):
+  PostTile.fromDocumentSnaptshot(DocumentSnapshot snapshot,{Key key}):
     _id=snapshot.documentID,
     _type=snapshot.data["type"],
     _timeStamp=snapshot.data["timeStamp"],
@@ -58,7 +58,8 @@ class PostTile extends StatefulWidget {
     _ownerId=snapshot.data["ownerId"],
     _nbLikes=snapshot.data["nbLikes"],
     _imageWidth=snapshot.data["imageWidth"],
-    _imageHeight=snapshot.data["imageHeight"];
+    _imageHeight=snapshot.data["imageHeight"],
+    super(key:key);
   
 
 
@@ -72,6 +73,7 @@ class PostTileState extends State<PostTile> with AutomaticKeepAliveClientMixin  
   bool _isLiked;
   UserCircleAvatar _userCircleAvatar;
   User currentUser;
+  int nbLikes;
 
 
 
@@ -82,6 +84,7 @@ class PostTileState extends State<PostTile> with AutomaticKeepAliveClientMixin  
     final MainBloc _mainBloc = BlocProvider.of<MainBloc>(context);
     currentUser =_mainBloc.currentUser;
     _isLiked =getFavStatus(currentUser);
+    nbLikes = widget._nbLikes;
   }
 
   bool getFavStatus(User user){
@@ -123,10 +126,12 @@ class PostTileState extends State<PostTile> with AutomaticKeepAliveClientMixin  
     if(_isLiked){
       db.updateOldPost(widget.id, widget._tagsId, "nbLikes", 1);
       db.updateOldUserFav(currentUser, widget.id, 1);
+      nbLikes = widget._nbLikes+1;
     }
     else{
       db.updateOldPost(widget.id, widget._tagsId, "nbLikes", -1);
       db.updateOldUserFav(currentUser, widget.id, -1);
+      nbLikes = widget._nbLikes;
     }
   }
 
@@ -150,7 +155,7 @@ class PostTileState extends State<PostTile> with AutomaticKeepAliveClientMixin  
                   Icon(Icons.favorite,size: 28.0,color: Colors.deepOrange,)
                   :
                   Icon(Icons.favorite_border,size: 28.0,color: Colors.black54),
-                  Text("${widget._nbLikes}",style: TextStyle(fontSize: 13.0,fontWeight: FontWeight.bold,color: Colors.black54),)
+                  Text("$nbLikes",style: TextStyle(fontSize: 13.0,fontWeight: FontWeight.bold,color: Colors.black54),)
                 ],
               ),
               SizedBox(width: 30.0,),
@@ -204,10 +209,18 @@ class PostTileState extends State<PostTile> with AutomaticKeepAliveClientMixin  
 
   ListTile _tileBottom(){
     return ListTile(
+      dense: false,
+      //contentPadding: EdgeInsets.symmetric( vertical :10.0),
       title: Text(widget._description),
-      trailing: widget._type==GALLERY? Column(
+      trailing: Container(
+        alignment: Alignment.center,
+        padding: EdgeInsets.symmetric(vertical: 30.0),
+        height: 60.0,
+        width: 35.0,
+        child: widget._type==GALLERY? Column(
         children: <Widget>[
           IconButton(
+            padding: EdgeInsets.all(1.0),
             icon: Icon(Icons.comment,color: Colors.black,),
             onPressed: (){
               Navigator.of(context).push(
@@ -217,9 +230,10 @@ class PostTileState extends State<PostTile> with AutomaticKeepAliveClientMixin  
               );
             },
             ),
-          Text("${widget._nbComments}")
+          Text("${widget._nbComments}",style: TextStyle(fontSize: 15.0,color: Colors.black),)
         ],
-      ):Container(width: 0.0,height: 0.0,),
+      ):Container(),
+      ),
     );
   }
 

@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Bloc/bloc_tags_page.dart';
 import 'package:tags/Event/events.dart';
 import 'package:tags/Models/tags.dart';
@@ -107,7 +106,7 @@ class TagsChatState extends State<TagsChat>{
                     if(index==listSnapshot.data.length) return  _buildLoadingIndicator(snapshot.data);
                     return Column(
                       children: <Widget>[
-                        MessageTile.fromDocumentSnapshot(listSnapshot.data[index]),
+                        MessageTile.fromDocumentSnapshot(listSnapshot.data[index],key: ValueKey(listSnapshot.data[index].documentID),),
                         Divider()
                       ],
                     );

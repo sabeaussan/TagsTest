@@ -22,14 +22,15 @@ class MessageTile extends StatefulWidget {
 
 
 
-  MessageTile.fromDocumentSnapshot(DocumentSnapshot snapshot):
+  MessageTile.fromDocumentSnapshot(DocumentSnapshot snapshot,{Key key}):
     _id=snapshot.documentID,
     _content=snapshot.data["content"],
     _timeStamp=snapshot.data["timeStamp"],
     _userName=snapshot.data["userName"],
     _userId=snapshot.data["userId"],
     _tagOwnerId=snapshot.data["tagOwnerId"],
-    _userPhotoUrl=snapshot.data["userPhotoUrl"];
+    _userPhotoUrl=snapshot.data["userPhotoUrl"],
+    super(key:key);
 
   @override
   _MessageTileState createState() => _MessageTileState();

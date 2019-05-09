@@ -58,9 +58,9 @@ class TagsGalleryState extends State<TagsGallery> {
 
   List<Widget> _buildListPost(List<DocumentSnapshot> list, bool isLoading){
     List<Widget> _widgetList =list.map((DocumentSnapshot documents){
-      print(documents.documentID);
-      print("height : " + documents.data["imageHeight"].toString());
-      final PostTile postTile = PostTile.fromDocumentSnaptshot(documents);
+      //print(documents.documentID);
+      //print("height : " + documents.data["imageHeight"].toString());
+      final PostTile postTile = PostTile.fromDocumentSnaptshot(documents,key: ValueKey(documents.documentID),);
       postTile.setType(GALLERY);
       return Padding(
         padding: EdgeInsets.all(0.0),
