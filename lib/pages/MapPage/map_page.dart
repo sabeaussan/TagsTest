@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tags/Models/user.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 
 class MapPage extends StatefulWidget {
@@ -9,12 +9,26 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
+  GoogleMapController gmController;
+
+
   @override
   Widget build(BuildContext context) {
     return Center(
         child: Container(
           height: MediaQuery.of(context).size.height,
-          child:Image.asset("lib/assets/google_map_dummy.jpg",fit: BoxFit.fill,),
+          width: double.infinity,
+          child: GoogleMap(
+            initialCameraPosition: CameraPosition(
+              target: LatLng(40.4167754, -3.7037902),
+              zoom: 18.0,
+            ),
+            onMapCreated: (GoogleMapController controller){
+                setState(() {
+                   gmController=controller;
+                });
+            },
+          ),
          ) //Text("map page")
       );
   }
