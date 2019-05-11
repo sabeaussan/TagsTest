@@ -12,6 +12,8 @@ import 'package:tags/Utils/firebase_db.dart';
 
 import 'package:tags/pages/comments_page.dart';
 
+import 'package:tags/UI/postTileBottom.dart';
+
   const int GALLERY=0;
   const int COMMENT=1;
   const int FAVORITE=2;
@@ -114,7 +116,7 @@ class PostTileState extends State<PostTile> with AutomaticKeepAliveClientMixin  
                 )
             ,)
           ),
-        _tileBottom(),
+        PostTileBottom(widget._description, widget._nbComments, _navigateCommentPage),
         Divider(color: Colors.deepOrange,)
       ],
     );
@@ -235,6 +237,14 @@ class PostTileState extends State<PostTile> with AutomaticKeepAliveClientMixin  
       ):Container(),
       ),
     );
+  }
+
+  void _navigateCommentPage(){
+    Navigator.of(context).push(
+                MaterialPageRoute(builder:(BuildContext context) {
+                  return CommentsPage(this.widget);
+                })
+              );
   }
 
   @override

@@ -44,7 +44,8 @@ class _CommentTileState extends State<CommentTile> with AutomaticKeepAliveClient
     final User currentUser =_mainBloc.currentUser;
     return Container(
       child: ListTile(
-        isThreeLine: true,
+        //dense: true,
+        //isThreeLine: true,
         onLongPress: widget._userId==currentUser.id? (){
           Scaffold.of(context).showSnackBar(
             SnackBar(
