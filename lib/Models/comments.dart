@@ -6,9 +6,10 @@ class Comment {
   String _userPhotoUrl;
   String _content;
   String _userId;
+  String _timeStamp;
 
 
-  Comment(this._id,this._userId,this._content,this._userPhotoUrl,this._userName,this._postId,this._tagsOwnerId); 
+  Comment(this._id,this._userId,this._content,this._userPhotoUrl,this._userName,this._postId,this._tagsOwnerId,this._timeStamp); 
 
 
   String get id  => _id;
@@ -18,6 +19,7 @@ class Comment {
   String get userPhotoUrl =>_userPhotoUrl;
   String get content => _content;
   String get userId => _userId;
+  String get timeStamp => _timeStamp;
 
   
 
@@ -34,6 +36,7 @@ class Comment {
       "userPhotoUrl"       : this._userPhotoUrl,
       "postId"       : this._postId,
       "tagsOwnerId"   : this._tagsOwnerId,
+      "timeStamp"     : this._timeStamp
     };
   }
   

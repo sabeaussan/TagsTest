@@ -5,6 +5,7 @@ import 'package:tags/Models/tags.dart';
 import 'package:tags/Models/user.dart';
 import 'package:tags/Utils/firebase_db.dart';
 import 'package:tags/pages/TagsPage/tags_page.dart';
+import 'package:location/location.dart';
 
 
 class AddTagsPage extends StatefulWidget {
@@ -23,6 +24,9 @@ class _AddTagsPageState extends State<AddTagsPage> {
   GlobalKey<FormFieldState> _keyPassWord = GlobalKey<FormFieldState>();
   String _passWord;
   String _title;
+
+  Location location = new Location();
+  LocationData pos;
 
   Widget _buildTextNameField(){
     return Center(
@@ -188,6 +192,11 @@ class _AddTagsPageState extends State<AddTagsPage> {
     super.initState();
     _tagsNameController=TextEditingController();
     _tagsPassWordController=TextEditingController();
+    location.getLocation().then((LocationData loc){
+      setState(() {
+        pos=loc;
+      });
+    });
   }
 
   @override
@@ -206,10 +215,10 @@ class _AddTagsPageState extends State<AddTagsPage> {
     if(assertion){
       Tags newTag;
       groupValue==PUBLIC_MODE?
-      newTag = Tags(_tagsNameController.text, user.userName,user.id, db.timeStamp(), 53.0, 80, 0, 0, 0,groupValue,switchValue,valueC,null)
+      newTag = Tags(_tagsNameController.text, user.userName,user.id, db.timeStamp(), pos.latitude, pos.longitude,null,null,null, 0, 0, 0,groupValue,switchValue,valueC,null)
       :
-      newTag = Tags(_tagsNameController.text, user.userName, user.id,db.timeStamp(), 53.0, 80, 0, 0, 0,groupValue,switchValue,valueC,_tagsPassWordController.text);
-      newTag = await db.createTag(newTag, user);
+      newTag = Tags(_tagsNameController.text, user.userName, user.id,db.timeStamp(), pos.latitude, pos.longitude,null,null,null, 0, 0, 0,groupValue,switchValue,valueC,_tagsPassWordController.text);
+      newTag = await db.createTag(newTag);
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (BuildContext context){

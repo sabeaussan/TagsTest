@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:tags/Bloc/bloc_chat_page.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Bloc/main_bloc.dart';
+import 'package:tags/Event/events.dart';
 import 'package:tags/Models/message.dart';
 import 'package:tags/Models/user.dart';
 import 'package:tags/UI/chat_bubble.dart';
@@ -28,12 +30,30 @@ class _ChatPageState extends State<ChatPage> {
   String message;
   User currentUser;
   UserCircleAvatar _userCircleAvatar;
-  Stream _stream;
   bool convExist=false;   //convHasChanged
   int numMessageIni;
+  ScrollController _scrollController;
+  double lastExtent=0.0;
+  BlocChatPage _blocListChatMessage;
 
   //TODO: lle setState de onChanged nique la masse de read en avec le StreamBuilder
   //TODO: mettre le last message dans disucssion pour eviter d'écrire deux fois la même chose.
+
+  
+
+  void _fetchMoreTags() async {
+    if(_scrollController.position.pixels==_scrollController.position.maxScrollExtent){
+      if(lastExtent!=_scrollController.position.maxScrollExtent){
+        print("--------------------FetchMoreMessageEvent triggered----------------");
+        print("position : "+_scrollController.position.pixels.toString());
+        print("maxExtent : "+_scrollController.position.pixels.toString());
+        print("lastExtent : "+lastExtent.toString());
+        lastExtent = _scrollController.position.maxScrollExtent;
+        _blocListChatMessage.fetchMoreChatMessageControllerSink.add(FetchMoreChatMessageEvent());
+      }
+        
+    }
+  }
 
   
 
@@ -102,9 +122,11 @@ class _ChatPageState extends State<ChatPage> {
     _messageTextController=TextEditingController();
     _userCircleAvatar=UserCircleAvatar(widget._partner.userName,widget._partner.id);
     print("[initState ]"+widget._discussionId);
-    _stream = Firestore.instance.collection("Discussions").document(widget._discussionId).collection("Message").orderBy("id",descending: true).snapshots();
     final MainBloc _mainBloc = BlocProvider.of<MainBloc>(context);
     currentUser =_mainBloc.currentUser;
+    _scrollController = ScrollController();
+    _scrollController.addListener(_fetchMoreTags);
+    _blocListChatMessage=BlocChatPage(widget._discussionId);
   }
 
   Future<void> _sendMessages(Message message) async {
@@ -112,7 +134,17 @@ class _ChatPageState extends State<ChatPage> {
     db.sendMessageFirestore(widget._discussionId,message,currentUser,widget._partner);
   }
 
-
+  Widget _buildLoadingIndicator(bool isLoading){
+    return Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: Center(
+        child: Opacity(
+          opacity: isLoading ? 1.0 : 0.0,
+          child: CircularProgressIndicator(),
+        ),
+      ),
+    );
+  }
 
   @override
   void dispose() async {
@@ -120,7 +152,10 @@ class _ChatPageState extends State<ChatPage> {
     //messages non lus soient notifiées
     //TODO: checker si il y a eu des changements avant d'utiliser update
     db.updateDiscussion(currentUser.id,widget._discussionId);
+    //TODO : faire ici aussi la mis a jour des derniers messages affiché dans la conv 
     print("dispose");
+    _scrollController.removeListener(_fetchMoreTags);
+    _scrollController.dispose();
     super.dispose();
   }
   
@@ -139,29 +174,42 @@ class _ChatPageState extends State<ChatPage> {
           ],
         )
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _stream,
-        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot){
-          if(!snapshot.hasData) return Container();
+      body: StreamBuilder<List<DocumentSnapshot>>(
+        stream: _blocListChatMessage.listChatMessageControllerStream,
+        initialData: _blocListChatMessage.snapshotChatMessageList,
+        builder: (BuildContext context, AsyncSnapshot<List<DocumentSnapshot>> listSnapshot){
+          if(!listSnapshot.hasData) return Container();
           convExist=true;
           return Column(
             children: <Widget>[
-              Expanded(
-                child: ListView.builder(
-                  reverse: true,
-                  itemCount: snapshot.hasData? snapshot.data.documents.length : 0,
-                  itemBuilder: (BuildContext context, int index) {
-                    return Column(
-                      children: <Widget>[
-                        widget._partner.id==snapshot.data.documents[index]["userId"]?
-                        ChatBubble.fromDocumentSnapshot(snapshot.data.documents[index],true)
-                        :
-                        ChatBubble.fromDocumentSnapshot(snapshot.data.documents[index],false),
-                        SizedBox(height: 10.0,) 
-                      ],
-                    );
-                  }
-                ),
+              StreamBuilder(
+                stream: _blocListChatMessage.loadingChatMessageControllerStream ,
+                initialData: false ,
+                builder: (BuildContext context, AsyncSnapshot snapshot){
+                  return Expanded(
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      reverse: true,
+                      itemCount: listSnapshot.hasData? listSnapshot.data.length+1 : 0,
+                      itemBuilder: (BuildContext context, int index) {
+                        if(index==listSnapshot.data.length){
+                          return  Center(
+                            child: _buildLoadingIndicator(snapshot.data)
+                          );
+                        }
+                        return Column(
+                          children: <Widget>[
+                            widget._partner.id==listSnapshot.data[index]["userId"]?
+                            ChatBubble.fromDocumentSnapshot(listSnapshot.data[index],true)
+                            :
+                            ChatBubble.fromDocumentSnapshot(listSnapshot.data[index],false),
+                            SizedBox(height: 10.0,) 
+                          ],
+                        );
+                      }
+                    ),
+                  );
+                },
               ),
               _buildMessageRow(context)
             ],

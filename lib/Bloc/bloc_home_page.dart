@@ -18,11 +18,12 @@ import 'package:tags/pages/UserProfilPages/user_profile_page.dart';
 
 class BlocHomePage extends BlocBase{
 
-
+  static PageStorageKey keyMap;
   //Liste des configurations de widgets pour la homePage
   //On fournit à toutes les pages le User
+  
   final List<Map<Widget,AppBarHomePage>> _listWidgetHomePage = [
-    {_provideBloc(MapPage(), BlocMapPage()) : AppBarHomePage.mapBar},
+    {_provideBloc(MapPage(key: keyMap,), BlocMapPage()) : AppBarHomePage.mapBar},
     {ListTagsPage() :AppBarHomePage.listBar },
     {null : null},
     {_provideBloc(FavPage(), BlocFavoritePage()) : AppBarHomePage.favBar},
@@ -54,6 +55,7 @@ class BlocHomePage extends BlocBase{
   Stream<Map<Widget,AppBarHomePage>> get widgetPageStream => _widgetPageController.stream;
 
   BlocHomePage(){
+    keyMap =PageStorageKey('MapPage');
     _numTabController.stream.listen(_onTabChange);
   }
 

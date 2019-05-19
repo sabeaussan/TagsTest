@@ -127,7 +127,6 @@ class _TagsPageState extends State<TagsPage> {
 
   @override
   Widget build(BuildContext context) {
-    print(_isFav);
     return Scaffold(
         appBar: AppBar(
           title: Text(widget._tags.name,style: TextStyle(color: Colors.black,)),

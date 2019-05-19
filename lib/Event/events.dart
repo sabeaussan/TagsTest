@@ -13,3 +13,22 @@ class FetchMorePostEvent extends Event {
 
     FetchMorePostEvent();
 }
+
+
+class FetchMoreCommentEvent extends Event {
+  
+
+    FetchMoreCommentEvent();
+}
+
+class FetchMoreTagsEvent extends Event {
+  
+
+    FetchMoreTagsEvent();
+}
+
+class FetchMoreChatMessageEvent extends Event {
+  
+
+    FetchMoreChatMessageEvent();
+}

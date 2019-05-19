@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Bloc/bloc_tags_page.dart';
 import 'package:tags/Event/events.dart';
 import 'package:tags/Models/tags.dart';
@@ -64,15 +65,14 @@ class TagsChatState extends State<TagsChat>{
 
   Widget _buildLoadingIndicator(bool isLoading){
     return Padding(
-    padding: const EdgeInsets.all(12.0),
-    child: Center(
-      child: Opacity(
-        opacity: isLoading ? 1.0 : 0.0,
-        child: CircularProgressIndicator(),
+      padding: const EdgeInsets.all(12.0),
+      child: Center(
+        child: Opacity(
+          opacity: isLoading ? 1.0 : 0.0,
+          child: CircularProgressIndicator(),
+        ),
       ),
-    ),
-  );
-
+    );
   }
   
   

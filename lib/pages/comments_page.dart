@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:tags/Bloc/bloc_comment_page.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Bloc/main_bloc.dart';
+import 'package:tags/Event/events.dart';
 import 'package:tags/Models/comments.dart';
 import 'package:tags/Models/user.dart';
 import 'package:tags/UI/comment_tile.dart';
@@ -26,8 +28,25 @@ class _CommentsPageState extends State<CommentsPage> {
   String message;
   MainBloc _mainBloc;
   User currentUser;
+  BlocCommentsPage  _blocCommentsPage;
+  ScrollController _scrollController;
+  double lastExtent=0.0;
 
-  //TODO: utiliser des textFormField pour pouvoir avoir accés a onSaved
+  void _fetchMoreComments() async {
+    if(_scrollController.position.pixels==_scrollController.position.maxScrollExtent){
+      print("--------------------FetchMoreMessageEvent triggered----------------");
+      if(lastExtent!=_scrollController.position.maxScrollExtent){
+        print("position : "+_scrollController.position.pixels.toString());
+        print("maxExtent : "+_scrollController.position.pixels.toString());
+        print("lastExtent : "+lastExtent.toString());
+        lastExtent = _scrollController.position.maxScrollExtent;
+        _blocCommentsPage.fetchMoreCommentsControllerSink.add(FetchMoreCommentEvent());
+      }
+        
+    }
+  }
+
+  
 
   void _postComment(Comment comment,User currentUser) async {
     await db.createPostCommentFirestore(comment,widget._postTileToComment.tagsId,widget._postTileToComment.id);
@@ -72,7 +91,7 @@ class _CommentsPageState extends State<CommentsPage> {
                 () async {
                   _key.currentState.save();
                   if(message.trim().length!=0){
-                    Comment messageTosend = Comment(null, currentUser.id,message, currentUser.photoUrl, currentUser.userName, widget._postTileToComment.id, widget._postTileToComment.tagsId);
+                    Comment messageTosend = Comment(null, currentUser.id,message, currentUser.photoUrl, currentUser.userName, widget._postTileToComment.id, widget._postTileToComment.tagsId,db.timeStamp());
                     _messageTextController.clear();
                     _postComment(messageTosend,currentUser);
                   }
@@ -94,19 +113,21 @@ class _CommentsPageState extends State<CommentsPage> {
 
 
 
-  Widget _buildListView(QuerySnapshot snapshot) {
+  Widget _buildListView(List<DocumentSnapshot> snapshot,bool isLoading) {
     return 
-    snapshot.documents.length==0? SingleChildScrollView(
+    snapshot.length==0? SingleChildScrollView(
         child:  widget._postTileToComment
       )
     : 
     ListView.builder(
-                itemCount: snapshot.documents.length,
+                controller: _scrollController,
+                itemCount: snapshot.length+1,
                 itemBuilder: (BuildContext context, int index) {
+                  if(index==snapshot.length) return  _buildLoadingIndicator(isLoading);
                   return Column(
                     children: <Widget>[
                       index == 0 ? widget._postTileToComment : Container(),
-                      CommentTile.fromDocumentSnapshot(snapshot.documents[index]),
+                      CommentTile.fromDocumentSnapshot(snapshot[index]),
                       Divider()
                     ],
                   );
@@ -114,9 +135,23 @@ class _CommentsPageState extends State<CommentsPage> {
             );
   }
 
+  Widget _buildLoadingIndicator(bool isLoading){
+    return Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: Center(
+        child: Opacity(
+          opacity: isLoading ? 1.0 : 0.0,
+          child: CircularProgressIndicator(),
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     db.updateOldUserPost(widget._postTileToComment.id, currentUser.id,true);
+    _scrollController.removeListener(_fetchMoreComments);
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -127,6 +162,9 @@ class _CommentsPageState extends State<CommentsPage> {
     _focusNode=FocusNode();
     _mainBloc = BlocProvider.of<MainBloc>(context);
     currentUser =_mainBloc.currentUser;
+    _blocCommentsPage = BlocCommentsPage(widget._postTileToComment.id);
+    _scrollController = ScrollController();
+    _scrollController.addListener(_fetchMoreComments);
   }
 
   @override
@@ -138,21 +176,32 @@ class _CommentsPageState extends State<CommentsPage> {
         centerTitle: true,
         title: Text("Commentaires",style: TextStyle(color: Colors.black),),
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: Firestore.instance.collection("PostComments").document(widget._postTileToComment.id).collection("Comments").snapshots(),
-        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot){
-          if(!snapshot.hasData){
+      //TODO : mettre StreamBuilder dans un Flexible et buildMessageRow en dehors du Stbd le tout dans une column
+      body: StreamBuilder<List<DocumentSnapshot>>(
+        initialData: _blocCommentsPage.snapshotPostCommentsList ,
+        stream: _blocCommentsPage.listPostCommentsControllerStream,
+        builder: (BuildContext context, AsyncSnapshot<List<DocumentSnapshot>> listSnapshot){
+          if(!listSnapshot.hasData){
             return Center(
               child: CircularProgressIndicator(),
             );
           }
+          print("******[stb CommentsPage] trigered********* "+listSnapshot.data.length.toString());
           return Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                   Expanded(
                   child: Scrollbar(
                     child: Container(
-                      child: _buildListView(snapshot.data),
+                      child: StreamBuilder(
+                        stream: _blocCommentsPage.loadingCommentsControllerStream ,
+                        initialData: false ,
+                        builder: (BuildContext context, AsyncSnapshot snapshot){
+                          return Container(
+                            child: _buildListView(listSnapshot.data,snapshot.data),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),

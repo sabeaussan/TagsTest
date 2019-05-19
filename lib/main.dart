@@ -8,7 +8,6 @@ import 'package:tags/pages/home_page.dart';
 import './pages/login_page.dart';
 import 'dart:async';
 
-
 void main() => runApp(MyApp());
 
 
@@ -60,38 +59,43 @@ class _MyAppState extends State<MyApp> {
    return currentUser;
   }
 
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getCurrentUser=_provideCurrentUser();
+  }
 
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder(
-      stream: FirebaseAuth.instance.onAuthStateChanged,
-      builder: (BuildContext context, AsyncSnapshot snapshot){
-        getCurrentUser=_provideCurrentUser();
-        mainBloc=MainBloc();
-        print("******[stb onAuthStateChanged] trigered*********");
-        return BlocProvider(
-          bloc: snapshot.hasData? mainBloc : null,
-          child: MaterialApp(
-            title: 'Tags',
-            theme: _buildThemeData(),
-            home: snapshot.hasData? FutureBuilder<User>(
-              future:getCurrentUser,
-              builder:(BuildContext context, AsyncSnapshot<User> snapshot){
-                if(!snapshot.hasData){
-                  return Material(
-                    color: Colors.white,
-                    child: Center(
-                      child: CircularProgressIndicator(),
-                    )
-                  );
-                }
-                return Homepage();
-              } ,
-            ): LoginPage(),
-          ),
+        return  StreamBuilder(
+          stream: FirebaseAuth.instance.onAuthStateChanged,
+          builder: (BuildContext context, AsyncSnapshot snapshot){
+            mainBloc=MainBloc();
+            print("******[stb onAuthStateChanged] trigered*********");
+            return BlocProvider(
+              bloc: snapshot.hasData? mainBloc : null,
+              child: MaterialApp(
+                title: 'Tags',
+                theme: _buildThemeData(),
+                home: snapshot.hasData? FutureBuilder<User>(
+                  future:getCurrentUser,
+                  builder:(BuildContext context, AsyncSnapshot<User> snapshot){
+                    if(!snapshot.hasData){
+                      return Material(
+                        color: Colors.white,
+                        child: Center(
+                          child: CircularProgressIndicator(),
+                        )
+                      );
+                    }
+                    return Homepage();
+                  } ,
+                ): LoginPage(),
+              ),
+            );
+          },
         );
-      },
-    );
   }
 }

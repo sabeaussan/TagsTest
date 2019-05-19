@@ -13,6 +13,7 @@ import 'dart:async';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:tags/Models/userPost.dart';
 import 'package:tags/UI/post_tile.dart';
+import 'package:geoflutterfire/geoflutterfire.dart';
 
 
 
@@ -32,6 +33,7 @@ class FirebaseDB {
   final CollectionReference tagsRef = Firestore.instance.collection('Tags');
   final CollectionReference discussionRef = Firestore.instance.collection('Discussions');
   final CollectionReference postCommentRef = Firestore.instance.collection('PostComments');
+  Geoflutterfire geoflutterfire = Geoflutterfire();
 
 
   void deletePostFireStore(PostTile post) async { 
@@ -39,7 +41,7 @@ class FirebaseDB {
     await userRef.document(post.ownerId).collection("UserPost").document(post.id).delete();
     await tagsRef.document(post.tagsId).collection("TagsPost").document(post.id).delete();
     await postCommentRef.document(post.id).delete();
-    updateOldTags(post.tagsId,"nbMessage",-1);
+    updateOldTagsNbMsg(post.tagsId,"nbMessage",-1);
   }
 
   void deleteCommentFirestore(String tagId,String postId,String id) async { 
@@ -55,7 +57,7 @@ class FirebaseDB {
 
   void deleteTagsMessageFirestore(String tagId,String id) async { 
     await tagsRef.document(tagId).collection("TagsMessage").document(id).delete();
-    updateOldTags(tagId,"nbMessage",-1);
+    updateOldTagsNbMsg(tagId,"nbMessage",-1);
   }
 
   Future<User> getUser(String uid) async {
@@ -86,7 +88,7 @@ class FirebaseDB {
       .catchError((e)=> print(e));
       await tagDocReference.setData(post.toJson())
       .catchError((e)=>print(e));
-      updateOldTags(post.tagOwner.id,"nbPost",1);
+      updateOldTagsImage(post.tagOwner.id,"nbPost",post,1);
   }
 
   Future<void> createPostCommentFirestore(Comment comment,String tagId,String postId) async {
@@ -161,28 +163,54 @@ class FirebaseDB {
       DocumentReference discussionDocReference = tagsRef.document(message.tagOwnerId).collection("TagsMessage").document();
       message.setId(discussionDocReference.documentID);
       await discussionDocReference.setData(message.toJson()).catchError((e)=>print(e));
-      updateOldTags(message.tagOwnerId,"nbMessage",1);
+      updateOldTagsNbMsg(message.tagOwnerId,"nbMessage",1);
     }
   
-    Future<Tags> createTag(Tags tag, User oldUser ) async {
+    Future<Tags> createTag(Tags tag) async {
       Firestore.instance.runTransaction((Transaction transaction) async {
         DocumentReference tagDocReference =  tagsRef.document();
         String tagId = tagDocReference.documentID;
+        GeoFirePoint userLocation = geoflutterfire.point(latitude: tag.lat,longitude: tag.long);
         tag.setId(tagId);
-        await tagDocReference.setData(tag.toJson()).catchError((e)=>print(e));
+        await tagDocReference.setData(tag.toJson(userLocation.data)).catchError((e)=>print(e));
       });
       return tag;
     }
   
     //TODO: une seule fonction update est nécéssaire
   
-    void updateOldTags(String oldTagsId,String newInfo,int arg){
+    void updateOldTagsNbMsg(String oldTagsId,String newInfo,int arg){
       DocumentReference tagToUpdateRef = tagsRef.document(oldTagsId);
       Firestore.instance.runTransaction((Transaction transaction) async {
       DocumentSnapshot tagToUpdateSnapshot = await transaction.get(tagToUpdateRef);
         if(tagToUpdateSnapshot.exists){
           await transaction.update(
-            tagToUpdateSnapshot.reference,<String, dynamic>{newInfo : tagToUpdateSnapshot.data[newInfo] + arg}
+            tagToUpdateSnapshot.reference,<String, dynamic>
+            {
+              newInfo : tagToUpdateSnapshot.data[newInfo] + arg,
+
+            }
+          ).catchError((e)=> print(e));
+        }
+      });
+    }
+
+    void updateOldTagsImage(String oldTagsId,String newInfo,Post lastPost,int arg){
+      //TODO: quand un utlisateur supprime son post, supprime aussi le post de la photo 
+      //si c'était le dernier posté
+      DocumentReference tagToUpdateRef = tagsRef.document(oldTagsId);
+      Firestore.instance.runTransaction((Transaction transaction) async {
+      DocumentSnapshot tagToUpdateSnapshot = await transaction.get(tagToUpdateRef);
+        if(tagToUpdateSnapshot.exists){
+          print("----------- DEBUG UPDATEOLDTAGSIMAGE ------------"+tagToUpdateSnapshot.documentID);
+          await transaction.update(
+            tagToUpdateSnapshot.reference,<String, dynamic>
+            {
+              newInfo : tagToUpdateSnapshot.data[newInfo] + arg,
+              "lastPostImageUrl" : lastPost.imageUrl,
+              "lastPostImageWidth" : lastPost.imageWidth,
+              "lastPostImageHeight" : lastPost.imageHeight,
+            }
           ).catchError((e)=> print(e));
         }
       });

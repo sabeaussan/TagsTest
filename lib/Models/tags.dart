@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:geoflutterfire/geoflutterfire.dart';
 
 const int PUBLIC_MODE = 0;
 const int PRIVATE_MODE=1;
@@ -12,6 +13,9 @@ class Tags {
   String _creatorId;
   String _timeStamp;
   String _id;
+  String _lastPostImageUrl;
+  int _lastPostImageWidth;
+  int _lastPostImageHeight;
   double _lat;
   double _long;
   int _nbFav;
@@ -31,6 +35,9 @@ class Tags {
     this._timeStamp,
     this._lat,
     this._long,
+    this._lastPostImageUrl,
+    this._lastPostImageWidth,
+    this._lastPostImageHeight,
     this._nbFav,
     this._nbMessage,
     this._nbPost,
@@ -40,15 +47,17 @@ class Tags {
     this._passWord
     );
 
-    toJson () {
+    toJson (dynamic position) {
     return {
       "id"  : this._id,
       "name" : this._name,
       "creatorName"  : this._creatorName,
       "creatorId"  : this._creatorId,
       "timeStamp"   : this._timeStamp,
-      "lat"       : this._lat,
-      "long" : this._long,
+      "position"   : position,
+      "lastPostImageUrl" : this._lastPostImageUrl,
+      "lastPostImageWidth" : this._lastPostImageWidth,
+      "lastPostImageHeight" : this._lastPostImageHeight,
       "nbFav"  : this._nbFav,
       "nbMessage"   : this._nbMessage,
       "nbPost"       : this._nbPost,
@@ -64,6 +73,7 @@ class Tags {
   String get creatorId => _creatorId;
   String get timeStamp =>_timeStamp;
   String get id => _id;
+  String get lastPostImageUrl => _lastPostImageUrl;
   double get lat => _lat;
   double get long => _long;
   int get nbFav =>_nbFav;
@@ -71,6 +81,8 @@ class Tags {
   int get nbMessage =>_nbMessage;
   int get mode => _mode;
   bool get isPersonnal =>_isPersonnal;
+  int get lastPostImageWidth => _lastPostImageWidth;
+  int get lastPostImageHeight => _lastPostImageHeight;
   double get tagRange=> _tagRange;
   String get passWord => _passWord;
     
@@ -84,8 +96,11 @@ class Tags {
     _timeStamp=snapshot.data["timeStamp"],
     _creatorName=snapshot.data["creatorName"],
     _creatorId=snapshot.data["creatorId"],
-    _lat=snapshot.data["lat"],
-    _long=snapshot.data["long"],
+    _lat=snapshot.data["position"]["geopoint"].latitude,
+    _long=snapshot.data["position"]["geopoint"].longitude,
+    _lastPostImageUrl=snapshot.data["lastPostImageUrl"],
+    _lastPostImageWidth = snapshot.data["lastPostImageWidth"],
+    _lastPostImageHeight = snapshot.data["lastPostImageHeight"],
     _nbFav=snapshot.data["nbFav"],
     _nbMessage=snapshot.data["nbMessage"],
     _nbPost=snapshot.data["nbPost"],

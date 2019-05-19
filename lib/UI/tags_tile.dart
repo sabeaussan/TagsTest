@@ -1,7 +1,10 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:tags/Models/tags.dart';
-import 'package:tags/UI/user_circle_avatar.dart';
 import 'package:tags/pages/TagsPage/tags_page.dart';
+import 'dart:async';
+
+import 'leading_icon_tags_list.dart';
 
 
 class TagsTile extends StatelessWidget {
@@ -83,59 +86,80 @@ class TagsTile extends StatelessWidget {
           );
   }
 
+
   @override
   Widget build(BuildContext context) {
-    return (
-      ListTile(
-        leading: UserCircleAvatar(_tags.creatorName,_tags.creatorId),
-        onTap: (){
-          if(_tags.mode==PRIVATE_MODE && !_isFav){
-            if(_isNear) _buildPassWordDialog(context, false);
-            else {
-              if(_isFav) _buildPassWordDialog(context,true);
-              else return Container();
-            }
-          }
-          else{
-            if(_isNear) _navigateTagsPage(context,false);
-            else {
-              if(_isFav) _navigateTagsPage(context,true);
-              else return Container();
-            }
-          }
-        },
-        trailing:_isFav?
-          Padding(
-          child: Icon(Icons.star,size: 32.0, color: Colors.deepOrange),
-          padding: EdgeInsets.only(right: 10.0)
-          )
-          :
-         _isNear? 
-            Padding(
-              child: Icon(Icons.check_circle_outline,size: 32.0, color: Colors.deepOrange),
-              padding: EdgeInsets.only(right: 10.0)
-            ):
-            Column(
-              children: <Widget>[
-                IconButton(
-                  icon: Icon(Icons.near_me,size: 32.0,color: Colors.black),
-                  onPressed: (){}
-                ),
-                Text(_distance)
-              ],
-            ),
-        title: Row(
+    return GestureDetector(
+      onTap:(){
+        if(_tags.mode==PRIVATE_MODE && !_isFav){
+                if(_isNear) _buildPassWordDialog(context, false);
+                else {
+                  if(_isFav) _buildPassWordDialog(context,true);
+                  else return Container();
+                }
+              }
+              else{
+                if(_isNear) _navigateTagsPage(context,false);
+                else {
+                  if(_isFav) _navigateTagsPage(context,true);
+                  else return Container();
+                }
+              }
+      },
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15.0)
+        ),
+        elevation: 5.0,
+        margin: EdgeInsets.symmetric(horizontal: 8.5,vertical: 4.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            Text(_tags.name,style: TextStyle(fontWeight: FontWeight.bold),),
-            SizedBox(width: 15.0,),
-            //TODO : en fonction du tags (bar,cinema,etc mettre un icône approprié)
-            _tags.mode==PRIVATE_MODE ? Icon(Icons.lock,color: Colors.black87,)
+            SizedBox(
+              width: 10.0,
+            ),
+            Expanded(
+              flex: 1,
+              child: LeadingIconTagsList(_isNear, _isFav, _distance),
+            ),
+            Expanded(
+              flex: 4,
+              child: Column(
+                children: <Widget>[
+                  Text(_tags.name,style: TextStyle(fontWeight: FontWeight.bold,fontSize: 17.0),),
+                  SizedBox(
+                    height: 10.0,
+                  ),
+                  Text("${_tags.nbPost} posts et ${_tags.nbMessage} messages",style: TextStyle(fontSize: 12.0),),
+                ],
+              ),
+            ),
+            _tags.lastPostImageUrl==null?
+            Expanded(
+              child: Container(
+                height:MediaQuery.of(context).size.width*0.2 ,
+              ),
+              flex: 1,
+            )
             :
-            Container()
+            Expanded(
+              flex: 3,
+              child: Container(
+                width: MediaQuery.of(context).size.width*0.35,
+                height: MediaQuery.of(context).size.width*0.35,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.horizontal(right: Radius.circular(15.0)),
+                  shape: BoxShape.rectangle,
+                  image: DecorationImage(
+                    fit: _tags.lastPostImageWidth/_tags.lastPostImageHeight>=1.0 ? BoxFit.fitHeight:BoxFit.fitWidth,
+                    image: CachedNetworkImageProvider(_tags.lastPostImageUrl)
+                  )
+                ),
+              )
+            )
           ],
         ),
-        subtitle: Text("${_tags.nbPost} posts et ${_tags.nbMessage} messages"),
-      )
+      ),
     );
   }
 }

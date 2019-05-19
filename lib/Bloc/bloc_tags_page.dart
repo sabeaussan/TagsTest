@@ -125,7 +125,7 @@ class BlocTagsPage extends  BlocBase {
         }
       });
     }
-    if(_snapshotTagMessageList.length==0) {
+    if(_snapshotTagMessageList.length==0 && snapshot.documents.length!=0) {
       _snapshotTagMessageList.addAll(snapshot.documents);
       _lastMessageFetched=snapshot.documents[snapshot.documents.length-1];
     }
@@ -147,7 +147,7 @@ class BlocTagsPage extends  BlocBase {
         }
       });
     }
-    if(_snapshotTagPostList.length==0) {
+    if(_snapshotTagPostList.length==0 && snapshot.documents.length!=0) {
       _snapshotTagPostList.addAll(snapshot.documents);
       _lastPostFetched=snapshot.documents[snapshot.documents.length-1];
     }
