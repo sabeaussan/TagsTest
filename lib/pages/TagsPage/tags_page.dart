@@ -2,7 +2,7 @@ import 'package:date_format/date_format.dart';
 import 'package:flutter/material.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 
-
+import 'package:flutter/cupertino.dart';
 import 'package:tags/Bloc/bloc_tags_page.dart';
 import 'package:tags/Bloc/main_bloc.dart';
 import 'package:tags/Models/tags.dart';
@@ -44,7 +44,7 @@ class _TagsPageState extends State<TagsPage> {
               ),
             ),
           ),
-          SendMessageTile(false,bloc:_blocTagsPage,tagOwnerId:widget._tags.id),
+          widget.isFavAndNotNear? Container() : SendMessageTile(false,bloc:_blocTagsPage,tagOwnerId:widget._tags.id),
               
         ]));
   }
@@ -127,6 +127,9 @@ class _TagsPageState extends State<TagsPage> {
 
   @override
   Widget build(BuildContext context) {
+    const IconData fire = const IconData(0xf42f,
+          fontFamily: CupertinoIcons.iconFont,
+          fontPackage: CupertinoIcons.iconFontPackage);
     return Scaffold(
         appBar: AppBar(
           title: Text(widget._tags.name,style: TextStyle(color: Colors.black,)),
@@ -135,15 +138,14 @@ class _TagsPageState extends State<TagsPage> {
               onPressed: (){
                 _updateFavTags(currentUser);
               },
-              icon: _isFav ? Icon(Icons.star, color: Colors.deepOrange,size: 35.0,) : Icon(Icons.star_border,size: 35.0),
+              icon: _isFav ? Icon(Icons.loyalty, color: Colors.deepOrange,size: 35.0,) : Icon(Icons.loyalty,size: 35.0),
             ),
             IconButton(
               onPressed:(){
                 _buildInfoDialog();
               } ,
               icon: Icon(
-                Icons.info,
-                color: Colors.deepOrange,
+                Icons.whatshot,size: 35.0,
               ),
             )
           ],
@@ -157,6 +159,6 @@ class _TagsPageState extends State<TagsPage> {
             return _buildListDisplayedAndInputTile(snapshot);
           },
         ),
-        bottomNavigationBar: TagsBottomNavBar(_blocTagsPage));
+        bottomNavigationBar:TagsBottomNavBar(_blocTagsPage));
   }
 }

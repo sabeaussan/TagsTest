@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Bloc/main_bloc.dart';
@@ -20,40 +21,12 @@ class OtherUserProfilePage extends StatefulWidget {
 
 class _OtherUserProfilePageState extends State<OtherUserProfilePage> {
 
-  bool _shouldDisplayOverlay=false;
+
 
   Widget _buildTabs(){
-    return SliverFillRemaining(
-        child :Column(
-          children: <Widget>[
-            Divider(
-              height: 1.0,
-            ),
-            SizedBox(height: 16.0,),   
-            Expanded(
-              child: OtherUserPostGrid(widget._user),
-            )
-          ],
-        )
-    );
+    return OtherUserPostGrid(widget._user);
   }
 
-  Widget _displayOverlayImage(){
-    CachedNetworkImageProvider userImage = CachedNetworkImageProvider(widget._user.photoUrl);
-    return Material(
-      color: Colors.black54,
-      child: InkWell(
-        child: Center(
-          child: Image(image: userImage),
-        ),
-        onTap: (){
-          setState(() {
-            _shouldDisplayOverlay=!_shouldDisplayOverlay; 
-          });
-        },
-      )
-    );
-  }
 
   String retrieveDicussionId(String id1,String id2){
     return id1.compareTo(id2)<0?  "$id1+$id2" : "$id2+$id1";
@@ -70,90 +43,112 @@ class _OtherUserProfilePageState extends State<OtherUserProfilePage> {
     );
 
   }
- 
 
   Widget _buildUserProfileColumn(BuildContext context){
+     const IconData chat = const IconData(0xf38d,
+          fontFamily: CupertinoIcons.iconFont,
+          fontPackage: CupertinoIcons.iconFontPackage); 
     final MainBloc _mainBloc = BlocProvider.of<MainBloc>(context);
     final User currentUser =_mainBloc.currentUser;
-    return Center(
+    return Expanded(
+      flex: 0,
+      child: Center(
           child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            GestureDetector(
-              onTap: widget._user.photoUrl!=null?
-               (){
-                setState(() {
-                  _shouldDisplayOverlay=!_shouldDisplayOverlay; 
-                });
-              }
-              :
-              null ,
-              child:widget._user.photoUrl!=null ? 
-              CircleAvatar(
-                radius: MediaQuery.of(context).size.width*0.16,
-                backgroundImage:  CachedNetworkImageProvider(widget._user.photoUrl),
-              )
-              :
-              CircleAvatarInitiales(widget._user),
+          Container(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height*0.28,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.vertical(bottom: Radius.elliptical(150.0,30.0)),
+              color: Colors.red,
+              shape: BoxShape.rectangle
             ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Text(widget._user.userName,style: TextStyle(fontSize: 25.0,fontWeight: FontWeight.bold),),
-              currentUser.id!=widget._user.id?
-               IconButton(
-                icon: Icon(Icons.chat),
-                onPressed: (){
-                  _navigateChatPage(context,currentUser,widget._user);
-                },
-              )
-              :Container()
-            ],
-          ),
-          Text(widget._user.nom + " "+widget._user.prenom),
-          Divider()
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+              SizedBox(
+                width: 10.0,
+              ),
+              Expanded(
+                flex: 1,
+                child: currentUser.photoUrl!=null ? 
+                CircleAvatar(
+                  radius: MediaQuery.of(context).size.width*0.16,
+                  backgroundImage:  CachedNetworkImageProvider(widget._user.photoUrl),
+                )
+                :
+                CircleAvatarInitiales(currentUser),
+              ),
+            
+            SizedBox(
+              width: 12.0,
+            ),
+              Expanded(
+                flex:2,
+                child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: <Widget>[
+                        Flex(
+                          direction: Axis.horizontal,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: <Widget>[
+                          Flexible(
+                            flex: 4,
+                            child: Text(widget._user.userName,style: TextStyle(fontSize: 25.0,fontWeight: FontWeight.bold,color: Colors.white),),
+                           ),
+                          Flexible(
+                            fit: FlexFit.loose,
+                            flex: 0,
+                            child: currentUser.id!=widget._user.id?
+                              IconButton(
+                                icon: Icon(chat,color: Colors.white,),
+                                onPressed: (){
+                                  _navigateChatPage(context,currentUser,widget._user);
+                                },
+                              )
+                              :Container(),
+                         ),
+                        ],),
+                        Text(widget._user.nom + " "+widget._user.prenom,style: TextStyle(color: Colors.white),),
+                      ],
+                    ),
+              ),  
+                ],
+              ),
+            ),
           ],
         ),
+    ),
     );
   }
-
-
-  Widget _buildSliverAppBar(BuildContext context){
-    return 
-        SliverAppBar( 
-          pinned: true,
-          elevation: 0.0,
-          automaticallyImplyLeading: true,
-          expandedHeight: MediaQuery.of(context).size.height*0.40,
-          flexibleSpace: FlexibleSpaceBar(  
-            background: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                _buildUserProfileColumn(context),
-                Text(widget._user.bio),
-                SizedBox(height: 15.0),
-              ],
-           ),
-          ),
-        );
-  }
+ 
 
   @override
   Widget build(BuildContext context) {
-
-    return  Stack(
-      children: <Widget>[
-        Scaffold(
-          body: CustomScrollView(
-            slivers: <Widget>[
-              _buildSliverAppBar(context),
-              _buildTabs(),
-            ],
-          ),
-        ),
-        _shouldDisplayOverlay? _displayOverlayImage():Container(),
-      ],
+    return Scaffold(
+      body: Column(
+          children: <Widget>[
+            _buildUserProfileColumn(context),
+            SizedBox(
+              height: 10.0,
+            ),
+            Container(
+              child: Text(widget._user.bio),
+              margin: EdgeInsets.all(10.0),
+            ),
+            SizedBox(
+              height: 20.0,
+            ),
+            Expanded(
+              flex: 3,
+              child: _buildTabs(),
+            )
+          ],
+        )
     );
   }
 }

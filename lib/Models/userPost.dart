@@ -9,6 +9,8 @@ class UserPost {
   String _imageUrl;
   String _timeStamp;
   bool _lastCommentSeen;
+  int _imageWidth;
+  int _imageHeight;
 
 
   UserPost(
@@ -17,7 +19,9 @@ class UserPost {
     this._imageUrl,
     this._tagOwnerId,
     this._lastCommentSeen,
-    this._timeStamp
+    this._timeStamp,
+    this._imageHeight,
+    this._imageWidth
   );
 
   UserPost.fromPost(Post post):
@@ -26,11 +30,16 @@ class UserPost {
     _imageUrl = post.imageUrl,
     _creatorId = post.creator.id,
     _lastCommentSeen = true,
+    _imageHeight=post.imageHeight,
+    _imageWidth=post.imageWidth,
     _timeStamp = post.timeStamp;      //pose problème
+  
 
 
     UserPost.fromDocumentSnaptshot(DocumentSnapshot snapshot):
     _id=snapshot.documentID,
+    _imageHeight=snapshot.data["imageHeight"],
+    _imageWidth=snapshot.data["imageWidth"],
     _imageUrl = snapshot.data["imageUrl"],
     _creatorId = snapshot.data["ownerId"],
     _tagOwnerId = snapshot.data["tagsId"],
@@ -45,6 +54,8 @@ class UserPost {
       "imageUrl" : this._imageUrl,
       "ownerId"   : this._creatorId,
       "lastCommentSeen" : this._lastCommentSeen,
+      "imageHeight" : this._imageHeight,
+      "imageWidth" : this._imageWidth,
       "timeStamp"   : this._timeStamp
     };
   }
@@ -54,6 +65,8 @@ class UserPost {
   String get id =>_id;
   String get imageUrl => _imageUrl;
   String get timeStamp => _timeStamp;
+  int get imageWidth =>_imageWidth;
+  int get imageHeight =>_imageHeight;
   bool get lastCommentSeen => _lastCommentSeen;
 
   void setId(String postId){

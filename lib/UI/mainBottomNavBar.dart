@@ -4,6 +4,8 @@ import 'package:tags/Bloc/bloc_home_page.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Bloc/main_bloc.dart';
 
+
+
 class BottomNavBar extends StatefulWidget {
 //TODO: mettre en stateful pour pouvoir avoir des icones grisé quand non sélectionné
   final BlocHomePage _blocHomePage;
@@ -22,13 +24,13 @@ class BottomNavBarState extends State<BottomNavBar> {
     widget._blocHomePage.numTabSink.add(index);
   }
 
-  Widget _buildNewMessageIcon(){
+  Widget _buildNewMessageIcon(int numTab){
     return Stack(
         children: <Widget>[
-          Icon(Icons.person),
+          Icon(numTab==3?CupertinoIcons.person_solid:CupertinoIcons.person),
           //TODO: en faire un élément graphique
           CircleAvatar(
-            child: Center(child: Icon(Icons.error,size: 18.0,color:Colors.deepOrange),),
+            child: Center(child: Icon(Icons.error,size: 18.0,color:Colors.red),),
             backgroundColor: Color(0xFFF8F8F8),
             radius: 9,
           )
@@ -48,14 +50,23 @@ class BottomNavBarState extends State<BottomNavBar> {
               initialData: _mainBloc.newMessage || _mainBloc.newComment,
               builder: (BuildContext context, AsyncSnapshot<bool> snapshotNewMessage){
                   return CupertinoTabBar(
-                    activeColor: Colors.deepOrange,
+                    backgroundColor: Color(0xFFF8F8F8),
+                    activeColor: Colors.red,
+                    inactiveColor: Colors.black38,
+                    border: const Border(top: BorderSide(color: Colors.black12,width: 1)),
                     currentIndex: snapshotNumTab.data ,
                     items: <BottomNavigationBarItem>[
-                      BottomNavigationBarItem(icon: Icon(Icons.explore,),title: Container()),
-                      BottomNavigationBarItem(icon: Icon(Icons.location_on),title:Container()),
-                      BottomNavigationBarItem(icon: IconButton(icon: Container(),onPressed: (){},),title:Container()),
-                      BottomNavigationBarItem(icon: Icon(Icons.favorite),title:Container()),
-                      BottomNavigationBarItem(icon: snapshotNewMessage.data? _buildNewMessageIcon() : Icon(Icons.person),title:Container()),
+                      BottomNavigationBarItem(icon: Icon(snapshotNumTab.data==0?Icons.explore:IconData(0xe900, fontFamily: 'CompassOutline')),title: Container()),
+                      BottomNavigationBarItem(icon: Padding(
+                        child: Icon(snapshotNumTab.data==1? Icons.location_on:IconData(0xe900, fontFamily: 'CustomIcons')),
+                        padding: EdgeInsets.only(right: 38.0),
+                      ),title:Container()),
+                      //BottomNavigationBarItem(icon: ),
+                      BottomNavigationBarItem(icon: Padding(
+                        child: Icon(snapshotNumTab.data==2?Icons.favorite:Icons.favorite_border),
+                        padding: EdgeInsets.only(left: 38.0),
+                      ),title:Container()),
+                      BottomNavigationBarItem(icon: snapshotNewMessage.data? _buildNewMessageIcon(snapshotNumTab.data) : Icon(snapshotNumTab.data==3?Icons.person:Icons.person_outline),title:Container()),
                     ],
                     onTap:_onItemTapped,
                   );

@@ -120,6 +120,7 @@ class HomepageState extends State<Homepage> with SingleTickerProviderStateMixin 
             _buildAppBar(AppBarHomePage.mapBar):_buildAppBar(snapshot.data.values.single),
             body:snapshot.data==null? MapPage():snapshot.data.keys.single,           
             bottomNavigationBar: BottomNavBar(_blocHomePage),
+            
             floatingActionButton: Container(
               decoration: BoxDecoration(
                 border: Border.all(color: Color(0xFFF8F8F8),width: 4.5),
@@ -127,9 +128,9 @@ class HomepageState extends State<Homepage> with SingleTickerProviderStateMixin 
               ),
               child: FloatingActionButton(
                 mini : false,
-                backgroundColor: Colors.deepOrange,
-                elevation: 0.0,
-                child: Icon(Icons.add_location,size: 40.0,),
+                backgroundColor: Colors.red[600],
+                elevation: 8.0,
+                child: Icon(Icons.add_location,size: 32.0,color: Colors.white,),
                 onPressed:(){
                   _navigateAddTagsPage(context);
                 },

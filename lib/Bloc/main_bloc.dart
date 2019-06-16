@@ -6,9 +6,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:geoflutterfire/geoflutterfire.dart';
 import 'package:location/location.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
+import 'package:tags/Models/tags.dart';
 import 'package:tags/Models/user.dart';
 import 'package:tags/Utils/firebase_db.dart';
 import '../Utils/geolocalisation.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 
 
@@ -18,7 +20,7 @@ class MainBloc extends BlocBase {
   //avec un event updateUser qui modfie _currentUser avec les nouvelles données.
 
   StreamSubscription _firestoreSub;
-
+  Location _userLocation= Location();
   //TODO : peut il y avoir un problème avec la pagination si
   //on fectMoreTags alors qu'on ne se trouve plus dans la zone
 
@@ -27,41 +29,93 @@ class MainBloc extends BlocBase {
 
   //-----------------------------------------ListTagsController--------------------------------------
 
-
   List<DocumentSnapshot> _snapshotTagsList=List<DocumentSnapshot>();
+  List<Tags> _filteredTagsList=List<Tags>();
   List<DocumentSnapshot> get snapshotTagsList => _snapshotTagsList;
-  
+  List<Tags> get filteredSnapshotTagsList => _filteredTagsList;
 
-  final StreamController<List<DocumentSnapshot>> _listTagsController = StreamController<List<DocumentSnapshot>>.broadcast();
+  List<DocumentSnapshot> _mostPopularPosts=List<DocumentSnapshot>();
+  List<DocumentSnapshot> get mostPopularPosts => _mostPopularPosts;
 
-  StreamSink<List<DocumentSnapshot>> get _listTagsControllerSink => _listTagsController.sink;
-  Stream<List<DocumentSnapshot>> get listTagsControllerStream => _listTagsController.stream;
+  final StreamController<List<DocumentSnapshot>> _listMarkerTagsController = StreamController<List<DocumentSnapshot>>.broadcast();
+
+  StreamSink<List<DocumentSnapshot>> get _listMarkerTagsControllerSink => _listMarkerTagsController.sink;
+  Stream<List<DocumentSnapshot>> get listMarkerTagsControllerStream => _listMarkerTagsController.stream;
+
+  final StreamController<List<Tags>> _listTagsController = StreamController<List<Tags>>.broadcast();
+
+  StreamSink<List<Tags>> get _listTagsControllerSink => _listTagsController.sink;
+  Stream<List<Tags>> get listTagsControllerStream => _listTagsController.stream;
 
 
 
+  bool getFavStatus(String tagsId){
+     if(_currentUser.favTagsId!=null) return _currentUser.favTagsId.contains(tagsId);
+     return false;
+  } 
 
-
-
-
+  List<String> _getMostPopularTags(List<DocumentSnapshot> snapshot){
+    int totalPopularity=0;
+    int popularity;
+    List<String> mostPopularTags=List<String>();
+    Map <String,int> map=Map<String,int>();
+    snapshot.forEach((DocumentSnapshot doc){
+      popularity=doc.data["nbFav"]+doc.data["nbPost"];
+      map[doc.documentID]=popularity;
+      totalPopularity+=popularity;
+    });
+    map.forEach((String id,int pop){
+      if(pop>=totalPopularity/(snapshot.length).round()) mostPopularTags.add(id);
+    });
+    return mostPopularTags;
+  }
 
   void _onNewTagsSnapshot(List<DocumentSnapshot> snapshot){
     _snapshotTagsList=snapshot;
-    print("_onNewTagsSnapshot TRIGGERED *************"+snapshot.toString());
-    _listTagsControllerSink.add(snapshot);
+    _tagsFilter(snapshot);
+    _listMarkerTagsControllerSink.add(snapshot);
   }
 
+  void _tagsFilter(List<DocumentSnapshot> snapshot){
+    List<Tags> filteredList = List<Tags>();
+    snapshot.forEach((DocumentSnapshot tags){
+      //TODO : c'est de la merde comme solution
+      //déplacer ça pour que la mapPage puisse aussi avoir accès 
+      //à l'info isFav
+      final bool isFav = getFavStatus(tags.documentID);
+      final Tags tag = Tags.fromDocumentSnapshot(tags);
+      tag.setfFavStatus(isFav);
+      GeoFirePoint tagPosition = GeoFirePoint(tags.data["position"]["geopoint"].latitude, tags.data["position"]["geopoint"].longitude);
+      if(tagPosition.distance(lat: _userCurrentPosition.latitude,lng: _userCurrentPosition.longitude)<=2 || isFav){
+        filteredList.add(tag);
+      }
+    });
+    _filteredTagsList=filteredList;
+    _listTagsControllerSink.add(filteredList);
+  }
 
+  void _onLocationChanged(LocationData updatedLocation){
+    print("************* LOCATION CHANGED BY 5 M ******************");
+    if(Geolocalisation.gmController!=null){
+      Geolocalisation.gmController.moveCamera(
+      CameraUpdate.newCameraPosition(CameraPosition(
+        zoom: 14.0,
+        target: LatLng(updatedLocation.latitude, updatedLocation.longitude)
+      ))
+      );
+    }
+    _userCurrentPosition=updatedLocation;
+    _tagsFilter(_snapshotTagsList);
+  }
   
 
 
 
   MainBloc(){
-    Geolocalisation.getUserPosition().then((LocationData userLocation){
-      userCurrentPosition=userLocation;
-      _userPositionControllerSink.add(userCurrentPosition);
-      print("latitude : "+ userCurrentPosition.latitude.toString());
-      print("longitude : "+ userCurrentPosition.longitude.toString());
-      GeoFirePoint center = db.geoflutterfire.point(latitude : userCurrentPosition.latitude, longitude : userCurrentPosition.longitude);
+    _userLocation.getLocation().then((LocationData loc){
+      _userCurrentPosition=loc;
+      _userPositionControllerSink.add(_userCurrentPosition);
+      GeoFirePoint center = db.geoflutterfire.point(latitude : _userCurrentPosition.latitude, longitude : _userCurrentPosition.longitude);
         Query init = Firestore.instance.collection("Tags");
         db.geoflutterfire.collection(collectionRef: init).within(
           strictMode: false,
@@ -70,6 +124,8 @@ class MainBloc extends BlocBase {
           radius: 10,
         ).listen(_onNewTagsSnapshot);
     });
+    _userLocation.changeSettings(distanceFilter: 5);
+    _userLocation.onLocationChanged().listen(_onLocationChanged);
     _provideCurrentUser();
     }
   
@@ -99,7 +155,8 @@ class MainBloc extends BlocBase {
   //-------------------------------------------User Controller-------------------------------------------
   static User _currentUser;
   CachedNetworkImageProvider _userPhoto;
-  LocationData userCurrentPosition;
+  LocationData _userCurrentPosition;
+  LocationData get userCurrentPosition => _userCurrentPosition;
   User get currentUser => _currentUser;
   CachedNetworkImageProvider get userPhoto => _userPhoto;
 
@@ -130,12 +187,12 @@ class MainBloc extends BlocBase {
   
   
     void onCurrentUserUpdate (DocumentSnapshot snapshot){
-      print("***********[User updated] *************");
+      //print("***********[User updated] *************");
       _currentUser=User.fromDocumentSnapshot(snapshot);
       //TODO : changer ca car s active a chaque changement 
       if(currentUser.photoUrl!=null){
         _userPhoto=CachedNetworkImageProvider(_currentUser.photoUrl);
-        print("[onCurrentUserUpdate] getting photo");
+        //print("[onCurrentUserUpdate] getting photo");
       }
       _userUpdateControllerSink.add(currentUser);
     }

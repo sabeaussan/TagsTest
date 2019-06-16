@@ -48,6 +48,8 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+
+
   # To add assets to your application, add an assets section, like this:
   assets:
     - lib/assets/google_map_dummy.jpg
@@ -67,9 +69,18 @@ flutter:
   # list giving the asset and other descriptors for the font. For
   # example:
   fonts:
+    - family: CustomIcons
+      fonts:
+          - asset: lib/assets/fonts/location_outline.ttf
+    - family: LocationAround
+      fonts:
+          - asset: lib/assets/fonts/location_around.ttf
+    - family: CompassOutline
+      fonts:
+          - asset: lib/assets/fonts/compass_outline.ttf
     - family: InkFree
       fonts:
-          - asset: lib/assets/Inkfree.ttf
+          - asset: lib/assets/fonts/Inkfree.ttf
   #       - asset: fonts/Schyler-Italic.ttf
   #         style: italic
   #   - family: Trajan Pro

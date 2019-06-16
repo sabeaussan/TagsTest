@@ -25,7 +25,6 @@ class BlocHomePage extends BlocBase{
   final List<Map<Widget,AppBarHomePage>> _listWidgetHomePage = [
     {_provideBloc(MapPage(key: keyMap,), BlocMapPage()) : AppBarHomePage.mapBar},
     {ListTagsPage() :AppBarHomePage.listBar },
-    {null : null},
     {_provideBloc(FavPage(), BlocFavoritePage()) : AppBarHomePage.favBar},
     {_provideBloc(UserProfilePage(), BlocUserProfilePage()) : AppBarHomePage.userProfileBar}
   ];

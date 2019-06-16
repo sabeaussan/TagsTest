@@ -110,55 +110,73 @@ class TagsTile extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15.0)
         ),
-        elevation: 5.0,
-        margin: EdgeInsets.symmetric(horizontal: 8.5,vertical: 4.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        elevation: 20.0,
+        margin: EdgeInsets.symmetric(horizontal: 25,vertical: 12.0),
+        child: _tags.lastPostImageUrl==null? 
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
-            SizedBox(
-              width: 10.0,
-            ),
-            Expanded(
-              flex: 1,
-              child: LeadingIconTagsList(_isNear, _isFav, _distance),
-            ),
-            Expanded(
-              flex: 4,
-              child: Column(
+            //Expanded(
+              //flex: 2,
+               LeadingIconTagsList(_isNear, _isFav, _distance,Colors.red,Colors.black),
+            //),
+            //Expanded(
+              //flex: 2,
+              Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
-                  Text(_tags.name,style: TextStyle(fontWeight: FontWeight.bold,fontSize: 17.0),),
                   SizedBox(
                     height: 10.0,
                   ),
-                  Text("${_tags.nbPost} posts et ${_tags.nbMessage} messages",style: TextStyle(fontSize: 12.0),),
+                  Text(_tags.name,style: TextStyle(fontWeight: FontWeight.w600,fontSize: 20.0,color: Colors.black)),
+                  SizedBox(
+                    height: 13.0,
+                  ),
+                  Text("${_tags.nbPost} posts et ${_tags.nbMessage} messages",style: TextStyle(fontSize: 13.0,color:Colors.black),),
+                  SizedBox(
+                    height: 10.0,
+                  ),
                 ],
               ),
-            ),
-            _tags.lastPostImageUrl==null?
-            Expanded(
-              child: Container(
-                height:MediaQuery.of(context).size.width*0.2 ,
-              ),
-              flex: 1,
-            )
-            :
-            Expanded(
-              flex: 3,
-              child: Container(
-                width: MediaQuery.of(context).size.width*0.35,
-                height: MediaQuery.of(context).size.width*0.35,
+            //),
+            SizedBox(
+                    width: MediaQuery.of(context).size.width*0.13,
+                  ),
+          ],
+        )
+        :
+        Stack(
+          children: <Widget>[
+              Container(
+                width: MediaQuery.of(context).size.width-40,
+                height: MediaQuery.of(context).size.width,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.horizontal(right: Radius.circular(15.0)),
+                  borderRadius: BorderRadius.all(Radius.circular(15.0)),
                   shape: BoxShape.rectangle,
                   image: DecorationImage(
                     fit: _tags.lastPostImageWidth/_tags.lastPostImageHeight>=1.0 ? BoxFit.fitHeight:BoxFit.fitWidth,
                     image: CachedNetworkImageProvider(_tags.lastPostImageUrl)
                   )
                 ),
+              ),
+              Positioned(
+                child: LeadingIconTagsList(_isNear, _isFav, _distance,Colors.white70,Colors.white70),
+                right: 15.0,
+                top: 10.0,
+              ),
+              Positioned(
+                child: Text(_tags.name,style: TextStyle(fontWeight: FontWeight.w600,fontSize: 22.0,color: Colors.white)),
+                bottom: 25.0,
+                left: 25.0,
+              ),
+              Positioned(
+                top: 15.0,
+                left: 15.0,
+                child: Text("${_tags.nbPost} posts et ${_tags.nbMessage} messages",style: TextStyle(fontSize: 15.0,color:Colors.white),),
               )
-            )
-          ],
-        ),
+                ],
+              ),
       ),
     );
   }

@@ -34,7 +34,7 @@ class PublicTagsTile extends StatelessWidget {
             ),
             Expanded(
               flex: 1,
-              child: LeadingIconTagsList(_isNear, _isFav, _distance),
+              child: Container(),
             ),
             Expanded(
               flex: 4,

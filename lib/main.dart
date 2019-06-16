@@ -17,16 +17,16 @@ ThemeData _buildThemeData (){
           primarySwatch: Colors.deepOrange,
           //primaryColorLight: Colors.orange,
           primaryIconTheme: IconThemeData(
-            color: Colors.deepOrange,
+            color: Colors.red,
             size: 30.0
           ),
           //accentTextTheme: ,
           primaryTextTheme: TextTheme(
-            title: TextStyle(color: Colors.deepOrange,
+            title: TextStyle(color: Colors.red,
                   fontSize: 25.0,
                   fontFamily: "InkFree",
                   fontWeight: FontWeight.w900)),
-          accentColor: Colors.deepOrange,
+          accentColor: Colors.red,
           primaryColor: Color(0xFFF8F8F8),
           tabBarTheme: TabBarTheme(
             labelColor: Colors.deepOrange,

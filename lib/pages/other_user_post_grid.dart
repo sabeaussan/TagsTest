@@ -41,14 +41,22 @@ class OtherUserPostGrid extends StatelessWidget {
            child: AspectRatio(
             aspectRatio: 1.0,
             child: 
-             Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image:CachedNetworkImageProvider(userPostTileItems.imageUrl),
-                    fit: BoxFit.fitWidth,
-                    alignment: FractionalOffset.center,
-                  )
+             Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15.0)
                 ),
+                margin: EdgeInsets.symmetric(horizontal : 1.5,vertical: 5.0),
+                child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                  shape: BoxShape.rectangle,
+                  image: DecorationImage(
+                    image:CachedNetworkImageProvider(userPostTileItems.imageUrl),
+                      fit: userPostTileItems.imageWidth/userPostTileItems.imageHeight>=1.0 ? BoxFit.fitHeight:BoxFit.fitWidth,
+                      alignment: FractionalOffset.center,
+                ),
+              )
+              )
               )
 
             ),

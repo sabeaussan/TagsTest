@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:geoflutterfire/geoflutterfire.dart';
 
 const int PUBLIC_MODE = 0;
 const int PRIVATE_MODE=1;
@@ -25,7 +24,7 @@ class Tags {
   bool _isPersonnal;
   double _tagRange;
   String _passWord;
-
+  bool _favStatus;
 
 
   Tags(
@@ -85,9 +84,14 @@ class Tags {
   int get lastPostImageHeight => _lastPostImageHeight;
   double get tagRange=> _tagRange;
   String get passWord => _passWord;
-    
+  bool get favStatus => _favStatus;
+
   void setId(String id){
     this._id=id;
+  }
+
+  void setfFavStatus(bool favStatus){
+    this._favStatus=favStatus;
   }
 
   Tags.fromDocumentSnapshot(DocumentSnapshot snapshot):

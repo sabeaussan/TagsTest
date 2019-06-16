@@ -27,15 +27,13 @@ class _ListTagsPageState extends State<ListTagsPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    
     print("---------[initState listTags]-----------");
     _mainBloc = BlocProvider.of<MainBloc>(context);
   }
 
 
-  bool getFavStatus(User user,String tagsId){
-     if(user.favTagsId!=null) return user.favTagsId.contains(tagsId);
-     return false;
-  } 
+  
 
 
   double _getDistanceFromTagRange(Tags tag){
@@ -45,7 +43,6 @@ class _ListTagsPageState extends State<ListTagsPage> {
     distance = tagPosition.distance(lat: userLocation.latitude,lng : userLocation.longitude)*1000- tag.tagRange;
     if(distance<=0) _onRange=true;
     else _onRange=false;
-    print("-------------  DEBUG GETDISTANCEFROMTAGRANGE : "+tag.name+" ----------- "+distance.toString()+_onRange.toString());
     return distance;
   }
 
@@ -73,12 +70,11 @@ class _ListTagsPageState extends State<ListTagsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final User currentUser =_mainBloc.currentUser;
-    print(currentUser.id);
-    return StreamBuilder<List<DocumentSnapshot>>(
+
+    return StreamBuilder<List<Tags>>(
       stream: _mainBloc.listTagsControllerStream,
-      initialData: _mainBloc.snapshotTagsList,
-      builder: (BuildContext context, AsyncSnapshot<List<DocumentSnapshot>> listSnapshot){
+      initialData: _mainBloc.filteredSnapshotTagsList,
+      builder: (BuildContext context, AsyncSnapshot<List<Tags>> listSnapshot){
         if(!listSnapshot.hasData){
           return Center(
             child: CircularProgressIndicator(),
@@ -89,16 +85,12 @@ class _ListTagsPageState extends State<ListTagsPage> {
             child: Text("Aucun tags à proximité"),
             );
           }
-        print("****** [stb listTags] trigered ********* "+listSnapshot.data.length.toString());
             return ListView.builder(
               itemCount: listSnapshot.data.length ,
+              physics: const AlwaysScrollableScrollPhysics(),
               itemBuilder: (BuildContext context, int index){
-                final Tags tags = Tags.fromDocumentSnapshot(listSnapshot.data[index]);
-                final bool isFav = getFavStatus(currentUser,tags.id);
-                _distanceLabel=setDistanceLabel(tags);
-                print("-- ---- DISTANCE ENTRE USER ET TAG "+tags.name+" -------- = "+_distanceLabel);
-                //debugSetDistanceLabel();
-                return TagsTile(tags, _distanceLabel, _onRange,isFav);
+                _distanceLabel=setDistanceLabel(listSnapshot.data[index]);
+                return TagsTile(listSnapshot.data[index], _distanceLabel, _onRange,listSnapshot.data[index].favStatus);
               }
             );
       },

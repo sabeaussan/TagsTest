@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Bloc/main_bloc.dart';
@@ -47,8 +48,10 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
 
 
   Widget _buildTabs(User currentUser){
-    return SliverFillRemaining(
-        child :Column(
+    const IconData telegram = const IconData(0xf474,
+          fontFamily: CupertinoIcons.iconFont,
+          fontPackage: CupertinoIcons.iconFontPackage);
+    return Column(
           children: <Widget>[
             Divider(
               height: 1.0,
@@ -62,14 +65,14 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
                   stream: _mainBloc.newCommentControllerStream ,
                   initialData: _mainBloc.newComment ,
                   builder: (BuildContext context, AsyncSnapshot<bool> snapshotComment){
-                    return snapshotComment.data? _buildNewMessageIcon(Icons.image) :  Icon(Icons.image,size: 37.0,);
+                    return snapshotComment.data? _buildNewMessageIcon(Icons.collections) :  Icon(Icons.collections,size: 32.0,);
                   },
                 ),
                 StreamBuilder<bool>(
                   stream:_mainBloc.newMessageControllerStream ,
                   initialData:  _mainBloc.newMessage ,
                   builder: (BuildContext context, AsyncSnapshot<bool> snapshotMessage){
-                    return snapshotMessage.data? _buildNewMessageIcon(Icons.mail):Icon(Icons.mail,size: 37.0);
+                    return snapshotMessage.data? _buildNewMessageIcon(telegram):Icon(telegram,size: 40.0);
                   },
                 ),
               ],
@@ -84,7 +87,6 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
             ),
             )
           ],
-        )
     );
   }
 
@@ -173,51 +175,27 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
 
 
   Widget _buildUserProfileColumn(User currentUser,BuildContext context){ 
-    return Center(
+    return Expanded(
+      flex: 0,
+      child: Center(
           child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            AppBar(
-              automaticallyImplyLeading: false,
-              elevation: 0.0,
-              actions: <Widget>[
-                PopupMenuButton<int>(
-                  onSelected: (int choice)async {
-                    switch(choice){
-                      case 0:   //se déconnecter
-                        await _buildLogOutDialog();
-                        break;
-                      case 1: //mode privé
-                        await _buildPrivateDialog();
-                        break;
-                      case 2: //désactiver messages
-                        await _buildStopChatDialog();
-                        break;
-                    }
-                  },
-                  itemBuilder: (BuildContext context){
-                    return [
-                      PopupMenuItem(
-                      child: Text("se déconnecter"),
-                      value: 0 ,
-                      ),
-                      PopupMenuItem(
-                      child: Text("rendre le profil privé"),
-                      value: 1 ,
-                      ),
-                      PopupMenuItem(
-                      child: Text("desactiver les nouveaux messages"),
-                      value: 2 ,
-                      ),
-                    ];
-                  },
-                  icon: Icon(Icons.menu,size: 30.0,color: Colors.black87,),
-                  
-                  ),
-                
-              ],
+          Container(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height*0.28,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.vertical(bottom: Radius.elliptical(150.0,30.0)),
+              color: Colors.red,
+              shape: BoxShape.rectangle
             ),
-            GestureDetector(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: <Widget>[
+              SizedBox(
+                width: 10.0,
+              ),
+                GestureDetector(
               onTap: _currentUserPhoto!=null?
                (){}
               :
@@ -230,21 +208,78 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
               :
               CircleAvatarInitiales(currentUser),
             ),
-          Text(currentUser.userName,style: TextStyle(fontSize: 25.0,fontWeight: FontWeight.bold),),
+            SizedBox(
+              width: 12.0,
+            ),
+              Expanded(
+                flex: 3,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+
+                       Text(currentUser.userName,style: TextStyle(fontSize: 25.0,fontWeight: FontWeight.bold,color: Colors.white),),
+                    
           FlatButton(
-            child: Text("Modifier profil",),
+            child: Text("Modifier profil",style: TextStyle(color: Colors.white),),
             onPressed: (){
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (BuildContext context) => ModifProfilePage(currentUser)
-                )
-              );
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (BuildContext context) => ModifProfilePage(currentUser)
+                  )
+                );
             },
             color: Colors.transparent,          
           ),
-          Divider()
+                  ],
+                ),
+              ),
+              Expanded(
+                flex: 1,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: <Widget>[
+                    PopupMenuButton<int>(
+                    onSelected: (int choice)async {
+                      switch(choice){
+                        case 0:   //se déconnecter
+                          await _buildLogOutDialog();
+                          break;
+                        case 1: //mode privé
+                          await _buildPrivateDialog();
+                          break;
+                        case 2: //désactiver messages
+                          await _buildStopChatDialog();
+                          break;
+                      }
+                    },
+                    itemBuilder: (BuildContext context){
+                      return [
+                        PopupMenuItem(
+                        child: Text("se déconnecter"),
+                        value: 0 ,
+                        ),
+                        PopupMenuItem(
+                        child: Text("rendre le profil privé"),
+                        value: 1 ,
+                        ),
+                        PopupMenuItem(
+                        child: Text("desactiver les nouveaux messages"),
+                        value: 2 ,
+                        ),
+                      ];
+                    },
+                    icon: Icon(Icons.menu,size: 30.0,color: Colors.white,),
+                    
+                    ),
+                  ],
+                )
+              ),
+              ],
+            ),
+          ),
           ],
         ),
+    ),
     );
   }
 
@@ -263,33 +298,9 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
     stream =  _mainBloc.userUpdateControllerStream;
   }
 
-  Widget _buildSliverAppBar(User currentUser){
-    return 
-        SliverAppBar(
-          snap: true,
-          floating: true,
-          elevation: 0.0,
-          automaticallyImplyLeading: false,
-          expandedHeight: MediaQuery.of(context).size.height*0.52,
-          flexibleSpace: FlexibleSpaceBar(  
-            background: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                _buildUserProfileColumn(currentUser,context,),
-                ListTile(                           //Utiliser une ExpansionListTile plus tard
-                  dense: true,
-                  title:  Text(currentUser.bio),
-                ),
-                //SizedBox(height: 15.0),
-              ],
-           ),
-          ),
-        );
-  }
 
   @override
   Widget build(BuildContext context) {
-    print(currentUser.id);
     return  StreamBuilder(
       stream: stream ,
       initialData: currentUser ,
@@ -300,18 +311,24 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
           );
         }
         _currentUserPhoto =_mainBloc.userPhoto;
-        return Container(
-          child: Stack(
-            children: <Widget>[
-              CustomScrollView(
-                slivers: <Widget>[
-                  _buildSliverAppBar(snapshot.data),
-                  _buildTabs(snapshot.data),
-                ],
-              ),
-
-            ],
-          ),
+        return Column(
+          children: <Widget>[
+          _buildUserProfileColumn(currentUser,context,),
+            SizedBox(
+              height: 10.0,
+            ),
+            Container(
+              child: Text(currentUser.bio),
+              margin: EdgeInsets.all(10.0),
+            ),
+            SizedBox(
+              height: 20.0,
+            ),
+            Expanded(
+              flex: 3,
+              child: _buildTabs(currentUser),
+            )
+          ],
         );
       },
     );
