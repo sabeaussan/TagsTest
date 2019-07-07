@@ -45,20 +45,13 @@ class HomepageState extends State<Homepage> with SingleTickerProviderStateMixin 
           automaticallyImplyLeading: false,
           elevation: 5.0,
           titleSpacing: 0.0,
-          actions: <Widget>[
-            IconButton(
-              onPressed: (){},
-              padding: EdgeInsets.only(bottom: 5.0),
-              icon: Icon(Icons.star,color: Colors.deepOrange,size: 30.0,),
-            ),
-          ], 
           title: TabBar(
             labelPadding: EdgeInsets.only(top: 10.0,bottom: 10.0),
             labelStyle: TextStyle(fontSize: 23.0,fontFamily: "InkFree",fontWeight: FontWeight.w800) ,
             controller: favTabController,
             tabs: <Widget>[
-              Tab(text: "A proximité",),
-              Tab(text: "Les plus aimés"),
+              Tab(text: "Populaire",),
+              Tab(text: "Mes favoris"),
             ],
           )
         );

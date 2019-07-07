@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:geoflutterfire/geoflutterfire.dart';
 import 'package:location/location.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
+import 'package:tags/Event/events.dart';
 import 'package:tags/Models/tags.dart';
 import 'package:tags/Models/user.dart';
 import 'package:tags/Utils/firebase_db.dart';
@@ -25,6 +26,15 @@ class MainBloc extends BlocBase {
   //on fectMoreTags alors qu'on ne se trouve plus dans la zone
 
   
+  bool _favTagsEdgeReached=false;
+
+  void setFavTagsEdgeReached(bool favTagsEdgeReached){
+    this._favTagsEdgeReached=favTagsEdgeReached;
+  }
+
+  bool _fetchingPost=false;
+  int _lastIndexFetched;
+
   //TODO: mettre l'initialisation et l'actualisation de la position dans le MainBloc
 
   //-----------------------------------------ListTagsController--------------------------------------
@@ -34,8 +44,11 @@ class MainBloc extends BlocBase {
   List<DocumentSnapshot> get snapshotTagsList => _snapshotTagsList;
   List<Tags> get filteredSnapshotTagsList => _filteredTagsList;
 
-  List<DocumentSnapshot> _mostPopularPosts=List<DocumentSnapshot>();
-  List<DocumentSnapshot> get mostPopularPosts => _mostPopularPosts;
+  List<Tags> _mostPopularTags=List<Tags>();
+  List<Tags> get mostPopularTags => _mostPopularTags;
+
+  List<Tags> _listFavTags = List<Tags>();
+  List<Tags> get listFavTags => _listFavTags;
 
   final StreamController<List<DocumentSnapshot>> _listMarkerTagsController = StreamController<List<DocumentSnapshot>>.broadcast();
 
@@ -47,6 +60,11 @@ class MainBloc extends BlocBase {
   StreamSink<List<Tags>> get _listTagsControllerSink => _listTagsController.sink;
   Stream<List<Tags>> get listTagsControllerStream => _listTagsController.stream;
 
+  final StreamController<List<Tags>> _listPopularTagsController = StreamController<List<Tags>>.broadcast();
+
+  StreamSink<List<Tags>> get _listPopularTagsControllerSink => _listPopularTagsController.sink;
+  Stream<List<Tags>> get listPopularTagsControllerStream => _listPopularTagsController.stream;
+
 
 
   bool getFavStatus(String tagsId){
@@ -54,21 +72,7 @@ class MainBloc extends BlocBase {
      return false;
   } 
 
-  List<String> _getMostPopularTags(List<DocumentSnapshot> snapshot){
-    int totalPopularity=0;
-    int popularity;
-    List<String> mostPopularTags=List<String>();
-    Map <String,int> map=Map<String,int>();
-    snapshot.forEach((DocumentSnapshot doc){
-      popularity=doc.data["nbFav"]+doc.data["nbPost"];
-      map[doc.documentID]=popularity;
-      totalPopularity+=popularity;
-    });
-    map.forEach((String id,int pop){
-      if(pop>=totalPopularity/(snapshot.length).round()) mostPopularTags.add(id);
-    });
-    return mostPopularTags;
-  }
+
 
   void _onNewTagsSnapshot(List<DocumentSnapshot> snapshot){
     _snapshotTagsList=snapshot;
@@ -78,18 +82,36 @@ class MainBloc extends BlocBase {
 
   void _tagsFilter(List<DocumentSnapshot> snapshot){
     List<Tags> filteredList = List<Tags>();
+    List<Tags> temp = List<Tags>();
+    _mostPopularTags=[];
+    int totalPopularity=0;
+    int popularity;
     snapshot.forEach((DocumentSnapshot tags){
       //TODO : c'est de la merde comme solution
       //déplacer ça pour que la mapPage puisse aussi avoir accès 
       //à l'info isFav
-      final bool isFav = getFavStatus(tags.documentID);
+      //TODO: calculer le distanceLabel ici
       final Tags tag = Tags.fromDocumentSnapshot(tags);
-      tag.setfFavStatus(isFav);
+      final bool isFav = getFavStatus(tags.documentID);
       GeoFirePoint tagPosition = GeoFirePoint(tags.data["position"]["geopoint"].latitude, tags.data["position"]["geopoint"].longitude);
-      if(tagPosition.distance(lat: _userCurrentPosition.latitude,lng: _userCurrentPosition.longitude)<=2 || isFav){
+      final double distance=tagPosition.distance(lat: _userCurrentPosition.latitude,lng: _userCurrentPosition.longitude);
+      tag.setDistance(distance);
+      popularity=tags.data["nbFav"]+tags.data["nbPost"];
+      tag.setPopularity(popularity);
+      temp.add(tag);
+      totalPopularity+=popularity;
+      tag.setFavStatus(isFav);
+      if(distance<=2 ){ 
         filteredList.add(tag);
       }
     });
+    temp.forEach((Tags tag){
+      print("tag name: "+tag.name+" tag pop : "+tag.popularity.toString());
+      if(snapshot.length!=0){
+        if(tag.popularity>=totalPopularity~/(snapshot.length)) mostPopularTags.add(tag);
+      }
+    });
+    _listPopularTagsControllerSink.add(mostPopularTags);
     _filteredTagsList=filteredList;
     _listTagsControllerSink.add(filteredList);
   }
@@ -107,11 +129,68 @@ class MainBloc extends BlocBase {
     _userCurrentPosition=updatedLocation;
     _tagsFilter(_snapshotTagsList);
   }
+
+  //------------------------------------------FavTag StreamControllers-----------------------------------------
+
+  final StreamController<List<Tags>> _listFavTagController = StreamController<List<Tags>>.broadcast();
+
+  StreamSink<List<Tags>> get _listFavTagControllerSink => _listFavTagController.sink;
+  Stream<List<Tags>> get listFavTagControllerStream => _listFavTagController.stream;
+
+  final StreamController<FetchMoreFavTagsEvent> _fetchMoreFavTagController = StreamController<FetchMoreFavTagsEvent>.broadcast();
+
+  StreamSink<FetchMoreFavTagsEvent> get fetchMoreFavTagControllerSink => _fetchMoreFavTagController.sink;
+  Stream<FetchMoreFavTagsEvent> get _fetchMoreFavTagControllerStream => _fetchMoreFavTagController.stream;
+
+
+  final StreamController<bool> _loadingFavTagsController = StreamController<bool>.broadcast();
+
+  StreamSink<bool> get _loadingFavTagsControllerSink => _loadingFavTagsController.sink;
+  Stream<bool> get loadingFavTagsControllerStream => _loadingFavTagsController.stream;
   
 
-
+  void _fetchMoreFavTags(FetchMoreFavTagsEvent e) async {
+    int i;
+    int edge;
+    _listFavTags=[];
+    if(_favTagsEdgeReached) return;
+    if(e.fetchedIndex+2<=_currentUser.favTagsId.length){
+      edge=2;
+      if(e.fetchedIndex+2==_currentUser.favTagsId.length)_favTagsEdgeReached=true;
+    }
+    else {
+      if(_currentUser.favTagsId.length==0){
+        edge=0;
+      }
+      else edge=e.fetchedIndex+2-currentUser.favTagsId.length;
+      _favTagsEdgeReached=true;
+    }
+    _fetchingPost=true;
+    _loadingFavTagsControllerSink.add(_fetchingPost);
+    await Future(() async{
+      for(i=e.fetchedIndex;i<e.fetchedIndex+edge;i++){
+      final String markId = _currentUser.favTagsId[i];
+      print("first");
+      var doc = await Firestore.instance.collection("Tags").document(markId).get();
+        if(doc.exists){
+          final Tags favMark = Tags.fromDocumentSnapshot(doc);
+          favMark.setFavStatus(true);
+          _listFavTags.add(favMark);
+        }
+        print(_listFavTags);
+    }
+    });
+    _fetchingPost=false;
+    _loadingFavTagsControllerSink.add(_fetchingPost);
+    print(_listFavTags);
+    _listFavTagControllerSink.add(_listFavTags);
+  }
 
   MainBloc(){
+    /*********************FavTags  *************************/
+    _fetchMoreFavTagControllerStream.listen(_fetchMoreFavTags);    
+
+    /*****************************************************/
     _userLocation.getLocation().then((LocationData loc){
       _userCurrentPosition=loc;
       _userPositionControllerSink.add(_userCurrentPosition);
@@ -124,7 +203,7 @@ class MainBloc extends BlocBase {
           radius: 10,
         ).listen(_onNewTagsSnapshot);
     });
-    _userLocation.changeSettings(distanceFilter: 5);
+    _userLocation.changeSettings(distanceFilter: 10);
     _userLocation.onLocationChanged().listen(_onLocationChanged);
     _provideCurrentUser();
     }

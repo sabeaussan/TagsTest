@@ -14,7 +14,7 @@ void main() => runApp(MyApp());
 ThemeData _buildThemeData (){
 
    return ThemeData(
-          primarySwatch: Colors.deepOrange,
+          primarySwatch: Colors.red,
           //primaryColorLight: Colors.orange,
           primaryIconTheme: IconThemeData(
             color: Colors.red,
@@ -29,7 +29,7 @@ ThemeData _buildThemeData (){
           accentColor: Colors.red,
           primaryColor: Color(0xFFF8F8F8),
           tabBarTheme: TabBarTheme(
-            labelColor: Colors.deepOrange,
+            labelColor: Colors.red,
             unselectedLabelColor: Colors.black45,
             indicatorSize: TabBarIndicatorSize.tab,
           ),

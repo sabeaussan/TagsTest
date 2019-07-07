@@ -1,0 +1,26 @@
+Note et idée de fonctionnalité pour Tags:
+
+Tags est une appli google map intéractif qui a pour but de représenter l'activité en temps réel 
+d'une ville (un peu comme dans gta quand tu ouvre ta map)
+
+-faire des mark à durée de vie i.e mark événementielle (s'il y a un concert par exemple il apparait sous cette forme)
+-rajouté les fonctionnalité d'une capsulle temporelle (nombre d'ouverture ou date d'ouverture)
+-rajouté des icônres sur la map pour mieux différencier les mark (favories, bar, concert)
+-rajouté les story qui apparaissent sur la map s'il la mark a suffisemment d'activité
+-faire des notifs pour quand des mark sont à proximité
+-rajouter des tags à la création de la mark
+-adapter les mark à des jeux de piste
+-afficher uniquement les mark les plus importantes sur la map
+-affiche le profile + réseaux sociaux dans gens proches
+-faire le système de recherche + filtrage des marks (par tags, distance, popularité etc...)
+-le zoom modifie le nombre de mark affiché et les quels le sont
+-afficher l'utilisateur sur la map + cercle autour de lui représentant sa portée
+-possibilité de partager les mark
+-rajouter des teams et des jeux d'influences ? (jeux trouver charlie,chasse au trésor)
+-rajouter des overlays de chargement la ou il en faut
+-publiage de story sur une mark
+-on doit uploader l'image de modif profile page àprés avoir appuyé sur appliquer
+-on peut supprimer uniquement les mark perso ou ceux contenant les messages que du créateur
+-texte de description pour les marks
+-splash screen + icone
+-taggage par les utilisateurs

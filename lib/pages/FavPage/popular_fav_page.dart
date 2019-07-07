@@ -49,7 +49,7 @@ class _PopularFavPageState extends State<PopularFavPage> {
               physics: const AlwaysScrollableScrollPhysics(),
               itemBuilder: (BuildContext context, int index){
                 _distanceLabel=setDistanceLabel(snapshot.data[index]);
-                return TagsTile(snapshot.data[index], _distanceLabel, false,false,true);
+                return TagsTile(snapshot.data[index], _distanceLabel,true);
               }
           ); 
       }

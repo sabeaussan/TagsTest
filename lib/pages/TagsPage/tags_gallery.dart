@@ -102,7 +102,7 @@ class TagsGalleryState extends State<TagsGallery> {
             return Center(
               child: Text("ajoute un premier post !"),
             );
-          }
+        }
         print("******[stb tagsGallery] trigered********* "+listSnapshot.data.length.toString());
           return StreamBuilder(
             stream: widget._blocTagPage.loadingPostControllerStream ,

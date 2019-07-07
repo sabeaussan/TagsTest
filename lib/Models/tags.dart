@@ -25,6 +25,8 @@ class Tags {
   double _tagRange;
   String _passWord;
   bool _favStatus;
+  int _popularity;
+  double _distance;
 
 
   Tags(
@@ -79,6 +81,8 @@ class Tags {
   int get nbPost => _nbPost;
   int get nbMessage =>_nbMessage;
   int get mode => _mode;
+  int get popularity => _popularity;
+  double get distance => _distance;
   bool get isPersonnal =>_isPersonnal;
   int get lastPostImageWidth => _lastPostImageWidth;
   int get lastPostImageHeight => _lastPostImageHeight;
@@ -90,9 +94,18 @@ class Tags {
     this._id=id;
   }
 
-  void setfFavStatus(bool favStatus){
+  void setFavStatus(bool favStatus){
     this._favStatus=favStatus;
   }
+
+  void setPopularity(int popularity){
+    this._popularity=popularity;
+  }
+
+  void setDistance(double distance){
+    this._distance=distance;
+  }
+  
 
   Tags.fromDocumentSnapshot(DocumentSnapshot snapshot):
     _id=snapshot.documentID,

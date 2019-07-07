@@ -1,7 +1,7 @@
 
 import 'package:flutter/material.dart';
-import 'package:tags/pages/FavPage/private_fav_page.dart';
-import 'package:tags/pages/FavPage/public_fav_page.dart';
+import 'package:tags/pages/FavPage/popular_fav_page.dart';
+import 'package:tags/pages/FavPage/perso_fav_page.dart';
 
 
 import '../home_page.dart';
@@ -32,8 +32,8 @@ class FavPageState extends State<FavPage> {
   Widget build(BuildContext context) {
     return TabBarView(
       children: <Widget>[
-        PrivateFavPage(),
-        PublicFavPage(),
+        PopularFavPage(),
+        PersoFavPage(),
       ],
       controller: _tabController,
     );

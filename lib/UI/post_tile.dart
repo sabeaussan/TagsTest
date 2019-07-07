@@ -116,7 +116,7 @@ class PostTileState extends State<PostTile> with AutomaticKeepAliveClientMixin  
                 )
             ,)
           ),
-        PostTileBottom(widget._description, widget._nbComments, _navigateCommentPage),
+        PostTileBottom(widget._description, widget._nbComments, _navigateCommentPage,widget._type),
         Divider(color: Colors.deepOrange,)
       ],
     );
@@ -209,39 +209,10 @@ class PostTileState extends State<PostTile> with AutomaticKeepAliveClientMixin  
     });
   }
 
-  ListTile _tileBottom(){
-    return ListTile(
-      dense: false,
-      //contentPadding: EdgeInsets.symmetric( vertical :10.0),
-      title: Text(widget._description),
-      trailing: Container(
-        alignment: Alignment.center,
-        padding: EdgeInsets.symmetric(vertical: 30.0),
-        height: 60.0,
-        width: 35.0,
-        child: widget._type==GALLERY? Column(
-        children: <Widget>[
-          IconButton(
-            padding: EdgeInsets.all(1.0),
-            icon: Icon(Icons.comment,color: Colors.black,),
-            onPressed: (){
-              Navigator.of(context).push(
-                MaterialPageRoute(builder:(BuildContext context) {
-                  return CommentsPage(this.widget);
-                })
-              );
-            },
-            ),
-          Text("${widget._nbComments}",style: TextStyle(fontSize: 15.0,color: Colors.black),)
-        ],
-      ):Container(),
-      ),
-    );
-  }
-
   void _navigateCommentPage(){
     Navigator.of(context).push(
                 MaterialPageRoute(builder:(BuildContext context) {
+                  //this.widget.setType(COMMENT);
                   return CommentsPage(this.widget);
                 })
               );

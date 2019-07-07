@@ -52,7 +52,7 @@ class _PersoFavPageState extends State<PersoFavPage> {
 
   List<Widget> _buildListPost(List<Tags> list, bool isLoading){
     List<Widget> _widgetList =list.map((Tags tag){
-      final TagsTile tile = TagsTile(tag, "", false,true,true);
+      final TagsTile tile = TagsTile(tag,"",true);
       return Padding(
         padding: EdgeInsets.all(0.0),
         child: tile,

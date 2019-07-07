@@ -50,6 +50,7 @@ class _ModifProfilePageState extends State<ModifProfilePage> {
         color: Colors.grey[50],
         width: MediaQuery.of(context).size.width - 80.0,
         child: TextFormField(
+          maxLength: 18,
           controller: _userNameController,
           validator: (String input){
             if(input.length<2) return "Au moins 2 caractères recquis";
@@ -77,6 +78,7 @@ class _ModifProfilePageState extends State<ModifProfilePage> {
         color: Colors.grey[50],
         width: MediaQuery.of(context).size.width - 80.0,
         child: TextFormField(
+          maxLength: 15,
           controller:_prenomController ,
           validator: (String input){
             if(input.length==0) return "Rentre un prenom valide";
@@ -106,6 +108,7 @@ class _ModifProfilePageState extends State<ModifProfilePage> {
         color: Colors.grey[50],
         width: MediaQuery.of(context).size.width - 80.0,
         child: TextFormField(
+          maxLength: 15,
           controller: _nomController,
           validator: (String input){
             if(input.length==0) return "Rentre un nom valide";
@@ -149,6 +152,7 @@ class _ModifProfilePageState extends State<ModifProfilePage> {
   void _onConfirmRaisedButtonPressed(BuildContext context) {
     if(_formKey.currentState.validate()){
       _formKey.currentState.save();
+      //print(_nomUtilisateur);
       db.updateUser(widget._oldUser, _prenom, _nom, _nomUtilisateur,_bio);
       //print("2");     //s'execute avant la fin de db.updateUser pas bon 
       Navigator.of(context).pop();

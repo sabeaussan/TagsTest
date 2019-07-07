@@ -222,7 +222,9 @@ class _AddTagsPageState extends State<AddTagsPage> {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (BuildContext context){
-            return TagsPage(newTag);
+            newTag.setFavStatus(false);
+            newTag.setDistance(-10);
+            return TagsPage(newTag,isFavAndNotNear: false);
           }
         )
       );

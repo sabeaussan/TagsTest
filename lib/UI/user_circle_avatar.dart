@@ -64,7 +64,6 @@ class _UserCircleAvatarState extends State<UserCircleAvatar> {
 
   @override
   Widget build(BuildContext context) {
-
     return FutureBuilder(
       future: futureUserPhoto,
       builder: (BuildContext context, AsyncSnapshot snapshot) {

@@ -32,3 +32,13 @@ class FetchMoreChatMessageEvent extends Event {
 
     FetchMoreChatMessageEvent();
 }
+
+
+class FetchMoreFavTagsEvent extends Event {
+  
+  int _fetchedIndex;
+
+    FetchMoreFavTagsEvent(this._fetchedIndex);
+
+  int get fetchedIndex => _fetchedIndex;
+}

@@ -1,11 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:geoflutterfire/geoflutterfire.dart';
-import 'package:location/location.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Bloc/main_bloc.dart';
 import 'package:tags/Models/tags.dart';
-import 'package:tags/Models/user.dart';
 import 'package:tags/UI/tags_tile.dart';
 
 
@@ -33,40 +29,14 @@ class _ListTagsPageState extends State<ListTagsPage> {
   }
 
 
-  
-
-
-  double _getDistanceFromTagRange(Tags tag){
-    double distance;
-    LocationData userLocation = _mainBloc.userCurrentPosition;
-    GeoFirePoint tagPosition = GeoFirePoint(tag.lat, tag.long);
-    distance = tagPosition.distance(lat: userLocation.latitude,lng : userLocation.longitude)*1000- tag.tagRange;
-    if(distance<=0) _onRange=true;
-    else _onRange=false;
-    return distance;
-  }
-
   String setDistanceLabel(Tags tag){
-    int dist = _getDistanceFromTagRange(tag).toInt();
+    int dist = tag.distance.toInt();
+    if(dist<=0) _onRange=true;
     int r = dist%10;
     dist = dist - r +10;
     return dist.toString();
   }
 
-  void debugSetDistanceLabel(){
-    int dist = 598;
-    int r = dist%10;
-    dist = dist - r +10;
-    print("-- ---- DISTANCE debugSetDistanceLabel -------- = "+dist.toString());
-    dist = 5;
-    r = dist%10;
-    dist = dist - r +10;
-    print("-- ---- DISTANCE debugSetDistanceLabel -------- = "+dist.toString());
-    dist = 999;
-    r = dist%10;
-    dist = dist - r +10;
-    print("-- ---- DISTANCE debugSetDistanceLabel -------- = "+dist.toString());
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +60,7 @@ class _ListTagsPageState extends State<ListTagsPage> {
               physics: const AlwaysScrollableScrollPhysics(),
               itemBuilder: (BuildContext context, int index){
                 _distanceLabel=setDistanceLabel(listSnapshot.data[index]);
-                return TagsTile(listSnapshot.data[index], _distanceLabel, _onRange,listSnapshot.data[index].favStatus);
+                return TagsTile(listSnapshot.data[index], _distanceLabel, false);
               }
             );
       },

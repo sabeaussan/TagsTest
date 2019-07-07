@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Bloc/main_bloc.dart';
 import 'package:tags/Models/post.dart';
-//import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
 import 'dart:io';
 
@@ -87,7 +86,6 @@ class CreatePostPageState extends State<CreatePostPage> {
   String timeStamp() => DateTime.now().millisecondsSinceEpoch.toString();
 
   void _createPost(User currentUser,BuildContext context) async{
-    if(_postDescriptionController.text.trim().length!=0){ // TODO: pas besoin de mettre du texte !!!
       setState(() {
         _isLoading=true;
         _focusNode.unfocus(); 
@@ -97,7 +95,7 @@ class CreatePostPageState extends State<CreatePostPage> {
         _isLoading=false;
       });
       Navigator.of(context).pop();
-    }
+    
     
   }
 
@@ -159,7 +157,7 @@ class CreatePostPageState extends State<CreatePostPage> {
                     _createPost(currentUser,context);
                 },
                 iconSize: 40.0,
-                icon: Icon(Icons.check_circle,color:Colors.deepOrange),
+                icon: Icon(Icons.check_circle,color:Colors.red),
               )
             ],
           ),

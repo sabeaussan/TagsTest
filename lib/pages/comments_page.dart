@@ -149,7 +149,7 @@ class _CommentsPageState extends State<CommentsPage> {
 
   @override
   void dispose() {
-    db.updateOldUserPost(widget._postTileToComment.id, currentUser.id,true);
+    db.updateOldUserPost(widget._postTileToComment.id, currentUser.id,true);  //TODO: faire un truc pour ne pas update pour rien
     _scrollController.removeListener(_fetchMoreComments);
     _scrollController.dispose();
     super.dispose();

@@ -313,7 +313,7 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
         _currentUserPhoto =_mainBloc.userPhoto;
         return Column(
           children: <Widget>[
-          _buildUserProfileColumn(currentUser,context,),
+          _buildUserProfileColumn(snapshot.data,context,),
             SizedBox(
               height: 10.0,
             ),
@@ -326,7 +326,7 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
             ),
             Expanded(
               flex: 3,
-              child: _buildTabs(currentUser),
+              child: _buildTabs(snapshot.data),
             )
           ],
         );

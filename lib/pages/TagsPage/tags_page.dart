@@ -25,7 +25,6 @@ class TagsPage extends StatefulWidget {
 class _TagsPageState extends State<TagsPage> {
   Key keyGallery;
   Key keyChat;
-  bool _isFav;
   BlocTagsPage _blocTagsPage;
   User currentUser;
 
@@ -58,7 +57,7 @@ class _TagsPageState extends State<TagsPage> {
     _blocTagsPage = BlocTagsPage(widget._tags,keyGallery,keyChat);
     final MainBloc _mainBloc = BlocProvider.of<MainBloc>(context);
     currentUser =_mainBloc.currentUser;
-    _isFav =getFavStatus(currentUser);
+    //_isFav =getFavStatus(currentUser);
   }
 
   bool getFavStatus(User user){
@@ -68,13 +67,26 @@ class _TagsPageState extends State<TagsPage> {
 
 
 
-  void _updateFavTags(User user){
+  void _updateUserFavTags(User user){
+    //remplacer arg par _isFav dans la fonctio d'update
+    //ce sera plus lisible
     setState(() {
-      _isFav?
+      widget._tags.favStatus?
         db.updateOldUserFavTags(user, widget._tags.id, -1)
         :
         db.updateOldUserFavTags(user, widget._tags.id, 1);
-        _isFav=!_isFav;
+    });
+  }
+
+  void _updateNbFavTags(){
+    //remplacer arg par _isFav dans la fonctio d'update
+    //ce sera plus lisible
+    setState(() {
+      widget._tags.favStatus?
+        db.updateOldTagsNbFav(widget._tags.id,"nbFav" ,-1)
+        :
+        db.updateOldTagsNbFav(widget._tags.id, "nbFav",1);
+        widget._tags.setFavStatus(!widget._tags.favStatus);
     });
   }
 
@@ -127,6 +139,7 @@ class _TagsPageState extends State<TagsPage> {
 
   @override
   Widget build(BuildContext context) {
+    print(widget._tags.favStatus);
     const IconData fire = const IconData(0xf42f,
           fontFamily: CupertinoIcons.iconFont,
           fontPackage: CupertinoIcons.iconFontPackage);
@@ -136,9 +149,13 @@ class _TagsPageState extends State<TagsPage> {
           actions: <Widget>[
             IconButton(
               onPressed: (){
-                _updateFavTags(currentUser);
+                //Ca bug si on appuie trop vite
+                //mettre des await
+                _updateUserFavTags(currentUser);
+                _updateNbFavTags();
+                //widget._tags.setFavStatus(_isFav);
               },
-              icon: _isFav ? Icon(Icons.loyalty, color: Colors.deepOrange,size: 35.0,) : Icon(Icons.loyalty,size: 35.0),
+              icon: widget._tags.favStatus ? Icon(Icons.star, color: Colors.red,size: 35.0,) : Icon(Icons.star_border,color: Colors.black45,size: 35.0),
             ),
             IconButton(
               onPressed:(){

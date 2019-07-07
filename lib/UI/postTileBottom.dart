@@ -6,8 +6,9 @@ class PostTileBottom extends StatelessWidget {
     final String _description;
     final int _nbComments;
 		final Function _onPressed;
+    final int _type;
 
-    const PostTileBottom(this._description,this._nbComments,this._onPressed);
+    const PostTileBottom(this._description,this._nbComments,this._onPressed,this._type);
 
 
 
@@ -20,11 +21,11 @@ class PostTileBottom extends StatelessWidget {
           child: Text(_description,style: TextStyle(fontSize: 14.0),),
           flex: 6,
         ),
-        Expanded(
+        _type==0?Expanded(
 					flex: 1,
           child: Column(
             children: <Widget>[
-								IconButton(
+							  IconButton(
 									padding: EdgeInsets.all(1.0),
 									icon: Icon(Icons.comment,color: Colors.black,),
 									onPressed: _onPressed,
@@ -32,6 +33,10 @@ class PostTileBottom extends StatelessWidget {
 							Text("$_nbComments")
             ],
           ),
+        )
+        :
+        Container(
+          height: 64.0,
         ),
 				SizedBox(width: 10.0,),
       ],

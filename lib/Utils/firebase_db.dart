@@ -178,6 +178,22 @@ class FirebaseDB {
     }
   
     //TODO: une seule fonction update est nécéssaire
+
+    void updateOldTagsNbFav(String oldTagsId,String newInfo,int arg){
+      DocumentReference tagToUpdateRef = tagsRef.document(oldTagsId);
+      Firestore.instance.runTransaction((Transaction transaction) async {
+      DocumentSnapshot tagToUpdateSnapshot = await transaction.get(tagToUpdateRef);
+        if(tagToUpdateSnapshot.exists){
+          await transaction.update(
+            tagToUpdateSnapshot.reference,<String, dynamic>
+            {
+              newInfo : tagToUpdateSnapshot.data[newInfo] + arg,
+
+            }
+          ).catchError((e)=> print(e));
+        }
+      });
+    }
   
     void updateOldTagsNbMsg(String oldTagsId,String newInfo,int arg){
       DocumentReference tagToUpdateRef = tagsRef.document(oldTagsId);
@@ -271,6 +287,7 @@ class FirebaseDB {
     void updateUser(User oldUser,String prenom,String nom, String userName,String bio)  {      //rename updateProfileUser
       //Comparer a oldUser pour savoir ce qu'il faut changer exactement
       if(oldUser.prenom ==prenom && oldUser.nom==nom && oldUser.userName==userName && oldUser.bio==bio) return;
+      print(userName);
       DocumentReference userToUpdateRef = userRef.document(oldUser.id);
       Firestore.instance.runTransaction((Transaction transaction) async {
         DocumentSnapshot userToUpdateSnapshot = await transaction.get(userToUpdateRef);
