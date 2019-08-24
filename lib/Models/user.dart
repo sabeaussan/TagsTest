@@ -11,8 +11,9 @@ class User {
   String _id;
   String _bio;
   List<dynamic> _favPostId;
-  List<dynamic> _favTagsId;
+  List<dynamic> _favTagsId;    //Liste de Map<String,String> qui contient lastPostIdSeen
   List<dynamic> _favCommId;
+  String _lastConnectionTime;
 
 
   User(
@@ -26,7 +27,8 @@ class User {
     this._photoUrl,
     this._favCommId,
     this._favPostId,
-    this._favTagsId
+    this._favTagsId,
+    this._lastConnectionTime
   );
 
 
@@ -41,6 +43,7 @@ class User {
     _favCommId=snapshot.data["favCommId"],
     _favPostId=snapshot.data["favPostId"],
     _favTagsId=snapshot.data["favTagsId"],
+    _lastConnectionTime=snapshot.data["lastConnectionTime"],
     _photoUrl=snapshot.data["photoUrl"];
 
     User.fromDiscussion(String partnerId,String partnerUserName,String partnerPhotoUrl):
@@ -61,6 +64,7 @@ class User {
       "favCommId"       : this._favCommId,
       "favPostId"   : this._favPostId,
       "favTagsId"   : this._favTagsId,
+      "lastConnectionTime" : this._lastConnectionTime
     };
   }
 
@@ -74,4 +78,5 @@ class User {
   List<dynamic> get favPostId => _favPostId;
   List<dynamic> get favTagsId => _favTagsId;
   List<dynamic> get favCommId => _favCommId;
+  String get lastConnectionTime => _lastConnectionTime;
 }

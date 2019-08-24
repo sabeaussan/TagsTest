@@ -106,13 +106,9 @@ class _TagsTileState extends State<TagsTile> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-
-    return GestureDetector(
-      //TODO: a revoir il y a clairement un problème!!!!
-      onTap:(){
-        if(widget._isFavPage) _navigateTagsPage(context,true);
+  Widget _navigation(BuildContext context){
+    //TODO: a revoir il y a clairement un problème!!!!
+    if(widget._isFavPage) _navigateTagsPage(context,true);
         else{
           if(widget._tags.mode==PRIVATE_MODE){
                 if(_isNear) _buildPassWordDialog(context, false);
@@ -129,6 +125,13 @@ class _TagsTileState extends State<TagsTile> {
             }
           }
         }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap:(){
+        _navigation(context);
       },
       child: Card(
         shape: RoundedRectangleBorder(
@@ -157,7 +160,7 @@ class _TagsTileState extends State<TagsTile> {
                   SizedBox(
                     height: 13.0,
                   ),
-                  Text("${widget._tags.nbPost} posts et ${widget._tags.nbMessage} messages",style: TextStyle(fontSize: 13.0,color:Colors.black),),
+                  Text("${widget._distance} m et ${widget._tags.nbMessage} messages",style: TextStyle(fontSize: 13.0,color:Colors.black),),
                   SizedBox(
                     height: 10.0,
                   ),
@@ -197,7 +200,7 @@ class _TagsTileState extends State<TagsTile> {
               Positioned(
                 top: 15.0,
                 left: 15.0,
-                child: Text("${widget._tags.nbPost} posts et ${widget._tags.nbMessage} messages",style: TextStyle(fontSize: 15.0,color:Colors.white),),
+                child: Text("${widget._distance} m et ${widget._tags.nbMessage} messages",style: TextStyle(fontSize: 15.0,color:Colors.white),),
               )
                 ],
               ),

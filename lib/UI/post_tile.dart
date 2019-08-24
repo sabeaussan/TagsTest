@@ -95,7 +95,6 @@ class PostTileState extends State<PostTile> with AutomaticKeepAliveClientMixin  
   }
   
 
-
   @override
   Widget build(BuildContext context) {
     final double aspectRatio =widget._imageWidth/widget._imageHeight;
@@ -109,9 +108,11 @@ class PostTileState extends State<PostTile> with AutomaticKeepAliveClientMixin  
                 width:MediaQuery.of(context).size.width ,
                 alignment:FractionalOffset.topCenter,
                 imageUrl: widget._imageUrl,
-                placeholder:Container(
-                        child: CircularProgressIndicator(),
-                    ),
+                placeholder: (context,ur){
+                  return Container(
+                    child: CircularProgressIndicator(),
+                  ); 
+                },
                 fit: BoxFit.fitWidth ,
                 )
             ,)

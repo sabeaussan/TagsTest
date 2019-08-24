@@ -23,17 +23,15 @@ class _ListTagsPageState extends State<ListTagsPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    
-    print("---------[initState listTags]-----------");
     _mainBloc = BlocProvider.of<MainBloc>(context);
   }
 
 
-  String setDistanceLabel(Tags tag){
+  String setDistanceLabelAndOnRange(Tags tag){
     int dist = tag.distance.toInt();
     if(dist<=0) _onRange=true;
     int r = dist%10;
-    dist = dist - r +10;
+    dist = dist - r;
     return dist.toString();
   }
 
@@ -42,7 +40,7 @@ class _ListTagsPageState extends State<ListTagsPage> {
   Widget build(BuildContext context) {
 
     return StreamBuilder<List<Tags>>(
-      stream: _mainBloc.listTagsControllerStream,
+      stream: _mainBloc.listTagsPageControllerStream,
       initialData: _mainBloc.filteredSnapshotTagsList,
       builder: (BuildContext context, AsyncSnapshot<List<Tags>> listSnapshot){
         if(!listSnapshot.hasData){
@@ -55,11 +53,12 @@ class _ListTagsPageState extends State<ListTagsPage> {
             child: Text("Aucun tags à proximité"),
             );
           }
+          
             return ListView.builder(
               itemCount: listSnapshot.data.length ,
               physics: const AlwaysScrollableScrollPhysics(),
               itemBuilder: (BuildContext context, int index){
-                _distanceLabel=setDistanceLabel(listSnapshot.data[index]);
+                _distanceLabel=setDistanceLabelAndOnRange(listSnapshot.data[index]);
                 return TagsTile(listSnapshot.data[index], _distanceLabel, false);
               }
             );

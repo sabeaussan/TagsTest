@@ -19,11 +19,11 @@ class _PersoFavPageState extends State<PersoFavPage> {
 
   MainBloc _mainBloc;
   Future<List<Tags>> futureUserFavMark;
-  ScrollController _scrollController;
+  /*ScrollController _scrollController;
   double lastExtent=0.0;
-  int _fetchIndex=0;
+  int _fetchIndex=0;*/
 
-  void _fetchMoreFavTags() async {
+  /*void _fetchMoreFavTags() async {
     if(_scrollController.position.pixels==_scrollController.position.maxScrollExtent){
       if(lastExtent!=_scrollController.position.maxScrollExtent){
         print("--------------------FetchMoreFavTagsEvent triggered----------------");
@@ -49,6 +49,7 @@ class _PersoFavPageState extends State<PersoFavPage> {
       ),
     );
   }
+  */
 
   List<Widget> _buildListPost(List<Tags> list, bool isLoading){
     List<Widget> _widgetList =list.map((Tags tag){
@@ -58,7 +59,7 @@ class _PersoFavPageState extends State<PersoFavPage> {
         child: tile,
       );
     }).toList();
-    _widgetList.add(_buildLoadingIndicator(isLoading));
+    //_widgetList.add(_buildLoadingIndicator(isLoading));
     return _widgetList;
   }
 
@@ -70,21 +71,22 @@ class _PersoFavPageState extends State<PersoFavPage> {
   }
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _mainBloc = BlocProvider.of<MainBloc>(context);
-    _scrollController = ScrollController();
-    _mainBloc.setFavTagsEdgeReached(false);
-    _scrollController.addListener(_fetchMoreFavTags);
-    _mainBloc.fetchMoreFavTagControllerSink.add(FetchMoreFavTagsEvent(_fetchIndex));
-    _fetchIndex=_fetchIndex+2;
+    _mainBloc.newFavContent=false;
+    _mainBloc.sendNewEvent();
+    //_scrollController = ScrollController();
+    //_mainBloc.setFavTagsEdgeReached(false);
+    //_scrollController.addListener(_fetchMoreFavTags);
+    //_mainBloc.fetchMoreFavTagControllerSink.add(FetchMoreFavTagsEvent(_fetchIndex));
+    //_fetchIndex=_fetchIndex+2;
   }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder(
-      //initialData: widget._blocTagPage.snapshotTagPostList,
-      stream: _mainBloc.listFavTagControllerStream,
+    return FutureBuilder(
+      future: _mainBloc.getUserFavMarks(),
+      initialData: _mainBloc.listFavTags,
       builder: (BuildContext context, AsyncSnapshot<List<Tags>> listSnapshot){
         if(!listSnapshot.hasData){
           return Center(
@@ -93,10 +95,13 @@ class _PersoFavPageState extends State<PersoFavPage> {
         }
         if (listSnapshot.data.length==0) {
             return Center(
-              child: Text("Vous n'avez pas enregistrer de favori"),
+              child: Text("Vous n'avez pas enregistrer de favoris"),
             );
         }
-          return StreamBuilder(
+        return ListView(
+          children: _buildListPost(listSnapshot.data,null),
+        );
+          /*return StreamBuilder(
             stream: _mainBloc.loadingFavTagsControllerStream,
             initialData: false,
             builder: (BuildContext context, AsyncSnapshot snapshot){
@@ -106,7 +111,7 @@ class _PersoFavPageState extends State<PersoFavPage> {
             
               );
             },
-          );
+          );*/
         
       }
       

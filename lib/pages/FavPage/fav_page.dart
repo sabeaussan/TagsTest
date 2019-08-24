@@ -32,8 +32,8 @@ class FavPageState extends State<FavPage> {
   Widget build(BuildContext context) {
     return TabBarView(
       children: <Widget>[
-        PopularFavPage(),
         PersoFavPage(),
+        PopularFavPage(),
       ],
       controller: _tabController,
     );

@@ -26,39 +26,51 @@ class MainBloc extends BlocBase {
   //on fectMoreTags alors qu'on ne se trouve plus dans la zone
 
   
-  bool _favTagsEdgeReached=false;
+  /*bool _favTagsEdgeReached=false;
 
   void setFavTagsEdgeReached(bool favTagsEdgeReached){
     this._favTagsEdgeReached=favTagsEdgeReached;
   }
 
-  bool _fetchingPost=false;
-  int _lastIndexFetched;
+  bool _fetchingPost=false;*/
+
 
   //TODO: mettre l'initialisation et l'actualisation de la position dans le MainBloc
 
   //-----------------------------------------ListTagsController--------------------------------------
 
   List<DocumentSnapshot> _snapshotTagsList=List<DocumentSnapshot>();
+
   List<Tags> _filteredTagsList=List<Tags>();
-  List<DocumentSnapshot> get snapshotTagsList => _snapshotTagsList;
   List<Tags> get filteredSnapshotTagsList => _filteredTagsList;
+ 
+  List<Tags> _marksList=List<Tags>();
+  List<Tags> get marksList => _marksList;
 
   List<Tags> _mostPopularTags=List<Tags>();
   List<Tags> get mostPopularTags => _mostPopularTags;
 
-  List<Tags> _listFavTags = List<Tags>();
-  List<Tags> get listFavTags => _listFavTags;
+  List<Tags> listFavTags = List<Tags>();
+  
 
-  final StreamController<List<DocumentSnapshot>> _listMarkerTagsController = StreamController<List<DocumentSnapshot>>.broadcast();
 
-  StreamSink<List<DocumentSnapshot>> get _listMarkerTagsControllerSink => _listMarkerTagsController.sink;
-  Stream<List<DocumentSnapshot>> get listMarkerTagsControllerStream => _listMarkerTagsController.stream;
 
-  final StreamController<List<Tags>> _listTagsController = StreamController<List<Tags>>.broadcast();
+  /************************************* StreamController des marker de map_page ***************************/
 
-  StreamSink<List<Tags>> get _listTagsControllerSink => _listTagsController.sink;
-  Stream<List<Tags>> get listTagsControllerStream => _listTagsController.stream;
+  final StreamController<List<Tags>> _listMarkerTagsController = StreamController<List<Tags>>.broadcast();
+
+  StreamSink<List<Tags>> get _listMarkerTagsControllerSink => _listMarkerTagsController.sink;
+  Stream<List<Tags>> get listMarkerTagsControllerStream => _listMarkerTagsController.stream;
+
+
+  /************************************* StreamController des marks de list_marks_page ***************************/
+
+  final StreamController<List<Tags>> _listTagsPageController = StreamController<List<Tags>>.broadcast();
+
+  StreamSink<List<Tags>> get _listTagsPageControllerSink => _listTagsPageController.sink;
+  Stream<List<Tags>> get listTagsPageControllerStream => _listTagsPageController.stream;
+
+  /************************************* StreamController des marks de popular_fav_page ***************************/
 
   final StreamController<List<Tags>> _listPopularTagsController = StreamController<List<Tags>>.broadcast();
 
@@ -69,66 +81,74 @@ class MainBloc extends BlocBase {
 
   bool getFavStatus(String tagsId){
      if(_currentUser.favTagsId!=null) return _currentUser.favTagsId.contains(tagsId);
-     return false;
   } 
 
 
 
   void _onNewTagsSnapshot(List<DocumentSnapshot> snapshot){
+    //TODO: est triggered 2 fois a chaque fois !!
     _snapshotTagsList=snapshot;
     _tagsFilter(snapshot);
-    _listMarkerTagsControllerSink.add(snapshot);
   }
 
   void _tagsFilter(List<DocumentSnapshot> snapshot){
-    List<Tags> filteredList = List<Tags>();
-    List<Tags> temp = List<Tags>();
-    _mostPopularTags=[];
+    /**Cette fonction permet de filtrer les marks qui doivent
+     * aller dans la favPage (most Popular), liste des marks a proximité et marker sur googleMap 
+     */
+        
+    _mostPopularTags=[];                    //liste des marks populaire pour popular_fav_page
+    _filteredTagsList=[];                   //liste des marks pour list_marks_page
+    _marksList=[];                          //liste des marks, utile pour map_page
     int totalPopularity=0;
     int popularity;
     snapshot.forEach((DocumentSnapshot tags){
-      //TODO : c'est de la merde comme solution
-      //déplacer ça pour que la mapPage puisse aussi avoir accès 
-      //à l'info isFav
-      //TODO: calculer le distanceLabel ici
       final Tags tag = Tags.fromDocumentSnapshot(tags);
       final bool isFav = getFavStatus(tags.documentID);
-      GeoFirePoint tagPosition = GeoFirePoint(tags.data["position"]["geopoint"].latitude, tags.data["position"]["geopoint"].longitude);
+      GeoFirePoint tagPosition = GeoFirePoint(tag.lat, tag.long);
       final double distance=tagPosition.distance(lat: _userCurrentPosition.latitude,lng: _userCurrentPosition.longitude);
       tag.setDistance(distance);
-      popularity=tags.data["nbFav"]+tags.data["nbPost"];
+      popularity=tag.nbFav+tag.nbPost;
       tag.setPopularity(popularity);
-      temp.add(tag);
       totalPopularity+=popularity;
       tag.setFavStatus(isFav);
-      if(distance<=2 ){ 
-        filteredList.add(tag);
+      _marksList.add(tag);
+      if(distance<=1){
+        //Si la mark est dans un rayon de 1km autour de l'utilisateur
+        //alors on l'affiche dans la list_marks_page
+        _filteredTagsList.add(tag);
       }
     });
-    temp.forEach((Tags tag){
-      print("tag name: "+tag.name+" tag pop : "+tag.popularity.toString());
+    //print("############ AVERAGE POPULARITY : "+(totalPopularity~/(snapshot.length)).toString());
+    _marksList.forEach((Tags tag){
+      //print("############ NAME : "+tag.name);
+      //print("############  POPULARITY : "+tag.popularity.toString());
       if(snapshot.length!=0){
-        if(tag.popularity>=totalPopularity~/(snapshot.length)) mostPopularTags.add(tag);
+        if(tag.popularity>=totalPopularity~/(snapshot.length)) {
+          tag.setIsPopular(true);
+          _mostPopularTags.add(tag);
+        }
       }
     });
-    _listPopularTagsControllerSink.add(mostPopularTags);
-    _filteredTagsList=filteredList;
-    _listTagsControllerSink.add(filteredList);
+    _listPopularTagsControllerSink.add(_mostPopularTags);    //on ajoute au stream de popular_fav_page
+    _listTagsPageControllerSink.add(_filteredTagsList);              //on ajoute au stream de list_marks_page 
+    _listMarkerTagsControllerSink.add(_marksList);           //on ajoute au stream de la map_page           
   }
 
   void _onLocationChanged(LocationData updatedLocation){
-    print("************* LOCATION CHANGED BY 5 M ******************");
-    if(Geolocalisation.gmController!=null){
+    //print("************* LOCATION CHANGED BY 5 M ******************");
+    /*if(Geolocalisation.gmController!=null){
       Geolocalisation.gmController.moveCamera(
       CameraUpdate.newCameraPosition(CameraPosition(
-        zoom: 14.0,
+        zoom: Geolocalisation.gmController.,
         target: LatLng(updatedLocation.latitude, updatedLocation.longitude)
       ))
       );
-    }
+    }*/
     _userCurrentPosition=updatedLocation;
+    _userPositionControllerSink.add(_userCurrentPosition);
     _tagsFilter(_snapshotTagsList);
   }
+
 
   //------------------------------------------FavTag StreamControllers-----------------------------------------
 
@@ -137,7 +157,7 @@ class MainBloc extends BlocBase {
   StreamSink<List<Tags>> get _listFavTagControllerSink => _listFavTagController.sink;
   Stream<List<Tags>> get listFavTagControllerStream => _listFavTagController.stream;
 
-  final StreamController<FetchMoreFavTagsEvent> _fetchMoreFavTagController = StreamController<FetchMoreFavTagsEvent>.broadcast();
+  /*final StreamController<FetchMoreFavTagsEvent> _fetchMoreFavTagController = StreamController<FetchMoreFavTagsEvent>.broadcast();
 
   StreamSink<FetchMoreFavTagsEvent> get fetchMoreFavTagControllerSink => _fetchMoreFavTagController.sink;
   Stream<FetchMoreFavTagsEvent> get _fetchMoreFavTagControllerStream => _fetchMoreFavTagController.stream;
@@ -147,9 +167,9 @@ class MainBloc extends BlocBase {
 
   StreamSink<bool> get _loadingFavTagsControllerSink => _loadingFavTagsController.sink;
   Stream<bool> get loadingFavTagsControllerStream => _loadingFavTagsController.stream;
-  
+  */
 
-  void _fetchMoreFavTags(FetchMoreFavTagsEvent e) async {
+ /* void _fetchMoreFavTags(FetchMoreFavTagsEvent e) async {
     int i;
     int edge;
     _listFavTags=[];
@@ -185,10 +205,11 @@ class MainBloc extends BlocBase {
     print(_listFavTags);
     _listFavTagControllerSink.add(_listFavTags);
   }
+  */
 
   MainBloc(){
     /*********************FavTags  *************************/
-    _fetchMoreFavTagControllerStream.listen(_fetchMoreFavTags);    
+    //_fetchMoreFavTagControllerStream.listen(_fetchMoreFavTags);    
 
     /*****************************************************/
     _userLocation.getLocation().then((LocationData loc){
@@ -206,11 +227,13 @@ class MainBloc extends BlocBase {
     _userLocation.changeSettings(distanceFilter: 10);
     _userLocation.onLocationChanged().listen(_onLocationChanged);
     _provideCurrentUser();
+    //_newFavContentControllerStream.listen(_onNewFavContent);
     }
   
     @override
     void dispose() {
-      _listTagsController.close();
+      _listPopularTagsController.close();
+      _listTagsPageController.close();
       _firestoreSub.cancel();
       _userUpdateController.close();
       _listConvController.close();
@@ -238,11 +261,20 @@ class MainBloc extends BlocBase {
   LocationData get userCurrentPosition => _userCurrentPosition;
   User get currentUser => _currentUser;
   CachedNetworkImageProvider get userPhoto => _userPhoto;
+  String _lastFavTagsPostIdSeen;
+  String _lastConnectionTimeStamp="0";
+  bool newFavContent=false;
 
     void setCurrentUser(User user){
         _currentUser=user;
     }
 
+
+  String get lastFavTagsPostIdSeen => _lastFavTagsPostIdSeen;
+
+  void setLastFavTagsPostIdSeen(String arg){
+    _lastFavTagsPostIdSeen=arg;
+  }
 
   final StreamController<User> _userUpdateController = StreamController<User>.broadcast();
 
@@ -258,16 +290,62 @@ class MainBloc extends BlocBase {
   
   void _provideCurrentUser() async {
       _currentUser = await db.getCurrentUser();
+      _lastConnectionTimeStamp=currentUser.lastConnectionTime;
+      print("########### DEBUG PROVIDE CURRENT USER ############  : "+ _currentUser.lastConnectionTime);
       db.userRef.document(currentUser.id).snapshots().listen(onCurrentUserUpdate);
+      listFavTags =  await getUserFavMarks();
+      newFavContent=hasChangedSinceLastConnection(listFavTags);
       Firestore.instance.collection("User").document(currentUser.id).collection("Discussion").orderBy("timeStamp",descending: true).snapshots().listen(_onNewMessage);
       Firestore.instance.collection("User").document(currentUser.id).collection("UserPost").orderBy("timeStamp",descending : true).snapshots().listen(_onNewComment);
     }
+
+    Future<List<Tags>> getUserFavMarks() async {
+      List<Tags> favMarks=[];
+      if(!newFavContent){
+        //Si on a l'icon de notif activé alors on vient de resume l'app
+        //et donc d'appeler getUserFavMarks
+        //donc pas besoin d'un double appel lorsque l'on accède a favPage
+        await Future(() async{
+          //récupère tous les favoris d'un utilisateur
+
+          for(int i=0;i<_currentUser.favTagsId.length;i++){
+            final String markId = _currentUser.favTagsId[i];
+            DocumentSnapshot doc = await Firestore.instance.collection("Tags").document(markId).get();
+            if(doc.exists){
+              final Tags favMark = Tags.fromDocumentSnapshot(doc);
+              favMark.setFavStatus(true);
+              favMarks.add(favMark);
+            }
+          }
+        });
+      }
+      return favMarks;
+    }
+
+    bool hasChangedSinceLastConnection(List<Tags> favMarks){
+      print("############# DEBUGGING hasChangedSinceLastConnection ##############");
+      print(_lastConnectionTimeStamp);
+      int lastConnectionTime = int.parse(_lastConnectionTimeStamp);
+      bool b = false;
+      favMarks.forEach((Tags mark){
+        int lastPostTime = int.parse(mark.lastPostTimeStamp);
+        print("lastConnectionTime : " + lastConnectionTime.toString());
+        print("lastPostTime : "+lastPostTime.toString());
+        if(lastPostTime>lastConnectionTime){
+          b=true;
+        }
+      });
+      print(b);
+      return b;
+    }
+
 
   
   
     void onCurrentUserUpdate (DocumentSnapshot snapshot){
       //print("***********[User updated] *************");
       _currentUser=User.fromDocumentSnapshot(snapshot);
+      _lastConnectionTimeStamp=_currentUser.lastConnectionTime;
       //TODO : changer ca car s active a chaque changement 
       if(currentUser.photoUrl!=null){
         _userPhoto=CachedNetworkImageProvider(_currentUser.photoUrl);
@@ -300,7 +378,7 @@ class MainBloc extends BlocBase {
       snapshot.documents.forEach((DocumentSnapshot docSnap){
         if(docSnap.data["lastCommentSeen"]!=true) newComment =true;
       });
-      _sendNewEvent();
+      sendNewEvent();
       _newCommentControllerSink.add(newComment);
       _listUserPostControllerSink.add(snapshot);
     }
@@ -326,9 +404,9 @@ class MainBloc extends BlocBase {
       newMessage=false;
       userDiscussionSnapshot=snapshot;
       snapshot.documents.forEach((DocumentSnapshot docSnap){
-        if(docSnap.data["lastMessageSeen"]!=true) newMessage =true;
+        if(docSnap.data["lastMessageSeen"]!=true) newMessage = true;
       });
-      _sendNewEvent();
+      sendNewEvent();
       _newMessageControllerSink.add(newMessage);
       _listConvControllerSink.add(snapshot);
     }
@@ -338,15 +416,27 @@ class MainBloc extends BlocBase {
 
     
 
-    StreamController<bool> _newEventController = StreamController<bool>.broadcast();
+    StreamController<NotificationEvent> _newEventController = StreamController<NotificationEvent>.broadcast();
 
-    StreamSink<bool> get _newEventControllerSink => _newEventController.sink;
-    Stream<bool> get newEventControllerStream => _newEventController.stream;
+    StreamSink<NotificationEvent> get _newEventControllerSink => _newEventController.sink;
+    Stream<NotificationEvent> get newEventControllerStream => _newEventController.stream;
 
-    void _sendNewEvent(){
-      _newEventControllerSink.add(newComment||newMessage);
+    void sendNewEvent(){
+      print("############### DEBUG NEW FAV CONTENT ############ : "+newFavContent.toString());
+      final NotificationEvent notif = NotificationEvent(newFavContent, newMessage, newComment);
+      _newEventControllerSink.add(notif);
     }
 
 
-    
-  }
+//------------------------------------ new Fav Content Event Controller --------------------------------
+
+  /*StreamController<bool> _newFavContentController = StreamController<bool>.broadcast();
+
+  StreamSink<bool> get newFavContentControllerSink => _newFavContentController.sink;
+  Stream<bool> get _newFavContentControllerStream => _newFavContentController.stream;
+
+  void _onNewFavContent(){
+
+  }*/
+  
+}

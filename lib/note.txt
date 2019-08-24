@@ -3,24 +3,80 @@ Note et idée de fonctionnalité pour Tags:
 Tags est une appli google map intéractif qui a pour but de représenter l'activité en temps réel 
 d'une ville (un peu comme dans gta quand tu ouvre ta map)
 
--faire des mark à durée de vie i.e mark événementielle (s'il y a un concert par exemple il apparait sous cette forme)
--rajouté les fonctionnalité d'une capsulle temporelle (nombre d'ouverture ou date d'ouverture)
--rajouté des icônres sur la map pour mieux différencier les mark (favories, bar, concert)
--rajouté les story qui apparaissent sur la map s'il la mark a suffisemment d'activité
+TROUVER UN MOYEN DE CONCILIER STORY SUR LES TAGS ET HOT TAGS (exemple un barman qui voudrait 
+mettre de l'ambiance dans son bar demande de publier des story sur le tags du bar ou de mettre 
+un indicateur de de hot tags)
+
+IDEE:
+-Les tags servirait pour le filtrage de la map sachant qu'il faudrait aussi rajouter des 
+type de mark différentes ou des story/event/annonce
+Exemple: une catégorie "objet perdu" ou "boulot d'été", "fêtes", "concert", "animal".
+Par contre je sais pas comment enrober ca(i.e quelle forme story, mark, annonce autre ?!).
+De préférence il faudrait qu'elles soient disponnible à l'echelle de la ville.
+
+PHASE 1:
+-le like ne doit pas pouvoir être annulé
+-on peut savoir si un nouveaux post d'un favpost a était posté en rajoutant dans tags lastPostId qu'on compare
+dans la collection favPost à son lastPostIdSeen (phase 1)
+-on doit uploader l'image de modif profile page àprés avoir appuyé sur appliquer (phase 1)
+-on peut supprimer uniquement les mark perso ou ceux contenant les messages que du créateur (phase 1)
+-texte de description pour les marks(phase 1)
+-splash screen + icone(phase 1)
+-rajouter des overlays de chargement la ou il en faut (phase 1)
+-afficher l'utilisateur sur la map + cercle autour de lui représentant sa portée (phase 1)
+-rajouté les fonctionnalité d'une capsulle temporelle (nombre d'ouverture ou date d'ouverture):
+    s'ouvre pendant x temps chaque y temps, nombre de post limité à chaque ouverture (phase 1.5)
+
+
+
+PHASE 2:
+
+-récupérer ami via le numéro de téléphone (phase 2)
+-rajouter des contacts (ou Buddies) (phase 2)
+-affiche le profile + réseaux sociaux dans gens proches (phase 2)
+-possibilité de creer des evenement durant jusqu'a 1 semaine (sorte de story localisé sur la carte 
+et on affiche la première jusqu'à la dernière dans l'ordre ) (phase 2)
+-faire des mark à durée de vie d'écriture, on peut écrire que pendant un certain temps, après juste 
+lecture, i.e mark événementielle (s'il y a un concert par exemple il apparait sous cette forme) (phase 2)
+-rajouté les story qui apparaissent sur la map s'il la mark a suffisemment d'activité(phase 2)
+-publiage de story sur une mark -> indicateur d'ambiance (phase 2)
+
+
+
+
+
+-portée de la mark fixe ou proportionnel à sa popularité
+-ajouter les videos
+-rajouté des icônes sur la map pour mieux différencier les mark (favories, bar, concert)
 -faire des notifs pour quand des mark sont à proximité
 -rajouter des tags à la création de la mark
 -adapter les mark à des jeux de piste
 -afficher uniquement les mark les plus importantes sur la map
--affiche le profile + réseaux sociaux dans gens proches
 -faire le système de recherche + filtrage des marks (par tags, distance, popularité etc...)
 -le zoom modifie le nombre de mark affiché et les quels le sont
--afficher l'utilisateur sur la map + cercle autour de lui représentant sa portée
 -possibilité de partager les mark
 -rajouter des teams et des jeux d'influences ? (jeux trouver charlie,chasse au trésor)
--rajouter des overlays de chargement la ou il en faut
--publiage de story sur une mark
--on doit uploader l'image de modif profile page àprés avoir appuyé sur appliquer
--on peut supprimer uniquement les mark perso ou ceux contenant les messages que du créateur
--texte de description pour les marks
--splash screen + icone
 -taggage par les utilisateurs
+
+
+
+
+BUG:
+-Lors d'un changement d'utilisateur, les fav ne sont pas remis correctement aux niveaux des icon
+-bug image picker
+-Quand on se connecte le cercle tourne a l'infini
+-affichage des noms quand on affiche une marque
+-dispose de commentPage maj timeStamp même sans changement
+-deux marques peuvent s'afficher les unes sur les autres : petite sur grande
+-Pas sur de ce qui se passe si l'user recoit un message alors qu'il est connecté
+
+
+AMELIORATION:
+-rajouter un test dans didChangeAppLifecycleState pur savoir si l'utilisateur a bien vu les notifs,
+ sinon mettre variable notifSeen de user a true.
+-Que se passe t-il si l'user post sur une mark de ces favories => trigger notif icon ?
+-Cancel les subscriptions dans le dipose
+-utiliser streamTransformer pour réorganiser les doc dans le stream
+-enlever les inititialisation a null
+-vérifier qu'on met bien à jour tout ce qui est possible en même temps
+-enlever les paramètres inutiles à l'inititialisation (ceux qui sont mis null)

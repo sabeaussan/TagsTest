@@ -42,3 +42,18 @@ class FetchMoreFavTagsEvent extends Event {
 
   int get fetchedIndex => _fetchedIndex;
 }
+
+
+class NotificationEvent extends Event{
+
+  final bool _newFavContentEvent;
+  final bool _newMessageEvent;
+  final bool _newCommentEvent;
+
+  bool get newFavContentEvent => _newFavContentEvent;
+  bool get newMessageEvent => _newMessageEvent;
+  bool get newCommentEvent => _newCommentEvent;
+
+  NotificationEvent(this._newFavContentEvent,this._newMessageEvent,this._newCommentEvent);
+
+}

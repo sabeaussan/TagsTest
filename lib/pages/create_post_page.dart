@@ -35,7 +35,9 @@ class CreatePostPageState extends State<CreatePostPage> {
     Completer<ui.Image> completer = new Completer<ui.Image>();
     new FileImage(widget._imageFile)
       .resolve(new ImageConfiguration())
-      .addListener((ImageInfo info, bool _) => completer.complete(info.image));
+      .addListener(ImageStreamListener(
+        (ImageInfo info, bool _) => completer.complete(info.image)
+      ));
     return completer.future;
   }
 

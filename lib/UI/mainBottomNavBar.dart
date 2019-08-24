@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:tags/Bloc/bloc_home_page.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Bloc/main_bloc.dart';
+import 'package:tags/Event/events.dart';
 
 
 
@@ -27,7 +28,21 @@ class BottomNavBarState extends State<BottomNavBar> {
   Widget _buildNewMessageIcon(int numTab){
     return Stack(
         children: <Widget>[
-          Icon(numTab==3?CupertinoIcons.person_solid:CupertinoIcons.person),
+          Icon(numTab==3?Icons.person:Icons.person_outline),
+          //TODO: en faire un élément graphique
+          CircleAvatar(
+            child: Center(child: Icon(Icons.error,size: 18.0,color:Colors.red),),
+            backgroundColor: Color(0xFFF8F8F8),
+            radius: 9,
+          )
+        ],
+    );
+  }
+
+  Widget _buildNewFavContentIcon(int numTab){
+    return Stack(
+        children: <Widget>[
+          Icon(numTab==2?Icons.favorite:Icons.favorite_border),
           //TODO: en faire un élément graphique
           CircleAvatar(
             child: Center(child: Icon(Icons.error,size: 18.0,color:Colors.red),),
@@ -45,10 +60,10 @@ class BottomNavBarState extends State<BottomNavBar> {
           stream: widget._blocHomePage.numTabStream,
           initialData: 0,
           builder: (BuildContext context, AsyncSnapshot<int> snapshotNumTab){
-            return  StreamBuilder<bool>(
+            return  StreamBuilder<NotificationEvent>(
               stream: _mainBloc.newEventControllerStream,
-              initialData: _mainBloc.newMessage || _mainBloc.newComment,
-              builder: (BuildContext context, AsyncSnapshot<bool> snapshotNewMessage){
+              initialData: NotificationEvent(_mainBloc.newFavContent, _mainBloc.newMessage, _mainBloc.newComment),
+              builder: (BuildContext context, AsyncSnapshot<NotificationEvent> snapshotNewMessage){
                   return CupertinoTabBar(
                     backgroundColor: Color(0xFFF8F8F8),
                     activeColor: Colors.red,
@@ -63,10 +78,19 @@ class BottomNavBarState extends State<BottomNavBar> {
                       ),title:Container()),
                       //BottomNavigationBarItem(icon: ),
                       BottomNavigationBarItem(icon: Padding(
-                        child: Icon(snapshotNumTab.data==2?Icons.favorite:Icons.favorite_border),
+                        child: snapshotNewMessage.data.newFavContentEvent ?
+                          _buildNewFavContentIcon(snapshotNumTab.data)
+                          :
+                          Icon(snapshotNumTab.data==2?Icons.favorite:Icons.favorite_border),
                         padding: EdgeInsets.only(left: 38.0),
                       ),title:Container()),
-                      BottomNavigationBarItem(icon: snapshotNewMessage.data? _buildNewMessageIcon(snapshotNumTab.data) : Icon(snapshotNumTab.data==3?Icons.person:Icons.person_outline),title:Container()),
+                      BottomNavigationBarItem(
+                        icon: snapshotNewMessage.data.newMessageEvent||snapshotNewMessage.data.newCommentEvent? 
+                          _buildNewMessageIcon(snapshotNumTab.data) 
+                          : 
+                          Icon(snapshotNumTab.data==3?Icons.person:Icons.person_outline),
+                        title:Container()
+                      ),
                     ],
                     onTap:_onItemTapped,
                   );

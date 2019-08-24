@@ -23,9 +23,9 @@ dependencies:
   cloud_firestore: ^0.12.5
   firebase_auth: ^0.10.0+1
   firebase_storage: ^3.0.0 
-  cached_network_image: ^0.5.1
+  cached_network_image: ^1.1.0
   date_format: ^1.0.6
-  google_maps_flutter: ^0.5.18
+  google_maps_flutter: ^0.5.19
   firebase_core: ^0.4.0
   geoflutterfire: ^2.0.3+5
   location: ^2.3.5
@@ -54,7 +54,7 @@ flutter:
   assets:
     - lib/assets/google_map_dummy.jpg
     - lib/assets/selfie_dummy.jpg
-    
+    - lib/assets/star_icon.png
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

@@ -25,8 +25,13 @@ class Tags {
   double _tagRange;
   String _passWord;
   bool _favStatus;
+  bool _favStatusHasChanged=false;
   int _popularity;
+  bool _isPopular=false; //TODO:faire getter et setter pour que les popular aient une image sur map page
   double _distance;
+  //String _lastPostIdSeen;
+  String _lastPostTimeStamp;
+  bool _hasBeenUpdated=false;
 
 
   Tags(
@@ -65,6 +70,7 @@ class Tags {
       "mode"   : this._mode,
       "tagRange" : this._tagRange,
       "isPersonnal"       : this._isPersonnal,
+      "lastPostTimeStamp" : this._lastPostTimeStamp,
       "passWord"       : this._passWord,
     };
   }
@@ -89,6 +95,11 @@ class Tags {
   double get tagRange=> _tagRange;
   String get passWord => _passWord;
   bool get favStatus => _favStatus;
+  bool get favStatusHasChanged => _favStatusHasChanged;
+  bool get isPopular => _isPopular;
+  //String get lastPostIdSeen => _lastPostIdSeen;
+  String get lastPostTimeStamp => _lastPostTimeStamp;
+  bool get hasBeenUpdated => _hasBeenUpdated;
 
   void setId(String id){
     this._id=id;
@@ -98,6 +109,10 @@ class Tags {
     this._favStatus=favStatus;
   }
 
+  void setFavStatusHasChanged(bool favStatusHasChanged){
+    this._favStatusHasChanged=favStatusHasChanged;
+  }
+
   void setPopularity(int popularity){
     this._popularity=popularity;
   }
@@ -105,6 +120,22 @@ class Tags {
   void setDistance(double distance){
     this._distance=distance;
   }
+  
+  void setIsPopular(bool isPopular){
+    this._isPopular=isPopular;
+  }
+
+  void setLastPostTimeStamp(String time){
+    this._lastPostTimeStamp=time;
+  }
+
+  void setHasBeenUpdated(bool b){
+    this._hasBeenUpdated=b;
+  }
+
+  /*void setLastPostIdSeen(String lastPostIdSeen){
+    this._lastPostIdSeen=lastPostIdSeen;
+  }*/
   
 
   Tags.fromDocumentSnapshot(DocumentSnapshot snapshot):
@@ -124,6 +155,7 @@ class Tags {
     _mode=snapshot.data["mode"],
     _isPersonnal=snapshot.data["isPersonnal"],
     _tagRange=snapshot.data["tagRange"],
+    _lastPostTimeStamp=snapshot.data["lastPostTimeStamp"],
     _passWord=snapshot.data["passWord"];
 
 }

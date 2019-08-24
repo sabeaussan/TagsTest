@@ -72,13 +72,13 @@ class _OtherUserProfilePageState extends State<OtherUserProfilePage> {
               ),
               Expanded(
                 flex: 1,
-                child: currentUser.photoUrl!=null ? 
+                child: widget._user.photoUrl!=null ? 
                 CircleAvatar(
                   radius: MediaQuery.of(context).size.width*0.16,
                   backgroundImage:  CachedNetworkImageProvider(widget._user.photoUrl),
                 )
                 :
-                CircleAvatarInitiales(currentUser),
+                CircleAvatarInitiales(widget._user),
               ),
             
             SizedBox(

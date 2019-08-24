@@ -110,7 +110,7 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
               child: Text("oui",style: TextStyle(fontSize: 20.0),),
               onPressed:() async{
                 Navigator.of(context).pop();
-                await db.signOutUser();
+                await db.signOutUser(currentUser.id);
               } ,
             ),
           ],
@@ -164,7 +164,7 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
               child: Text("oui",style: TextStyle(fontSize: 20.0),),
               onPressed:() async{
                 Navigator.of(context).pop();
-                await db.signOutUser();
+                //await db.signOutUser(currentUser.id);
               } ,
             ),
           ],

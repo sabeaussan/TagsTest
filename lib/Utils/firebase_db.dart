@@ -14,6 +14,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:tags/Models/userPost.dart';
 import 'package:tags/UI/post_tile.dart';
 import 'package:geoflutterfire/geoflutterfire.dart';
+import 'package:tags/pages/TagsPage/tags_page.dart';
 
 
 
@@ -127,6 +128,21 @@ class FirebaseDB {
       });
     }
 
+  void updateUserLastConnectionTime(String uid,){
+    //Cette fonction met à jour le champ lastConnectionTime du document user
+      DocumentReference userDocRef = userRef.document(uid);
+      Firestore.instance.runTransaction((Transaction transaction) async {
+      DocumentSnapshot userToUpdateSnapshot = await transaction.get(userDocRef);    //compte comme une lecture, voir si il y & pas moyen 
+        if(userToUpdateSnapshot.exists){
+          await transaction.update(
+            userToUpdateSnapshot.reference,<String, dynamic>{
+              "lastConnectionTime" : timeStamp(),
+              }
+          ).catchError((e)=> print(e));
+        }
+      });
+    } 
+
     String timeStamp() => DateTime.now().millisecondsSinceEpoch.toString();
 
   Future<void> sendMessageFirestore(String discussionId,Message message,User currentuser, User partner) async {
@@ -170,6 +186,7 @@ class FirebaseDB {
       Firestore.instance.runTransaction((Transaction transaction) async {
         DocumentReference tagDocReference =  tagsRef.document();
         String tagId = tagDocReference.documentID;
+        tag.setLastPostTimeStamp(timeStamp());
         GeoFirePoint userLocation = geoflutterfire.point(latitude: tag.lat,longitude: tag.long);
         tag.setId(tagId);
         await tagDocReference.setData(tag.toJson(userLocation.data)).catchError((e)=>print(e));
@@ -226,6 +243,7 @@ class FirebaseDB {
               "lastPostImageUrl" : lastPost.imageUrl,
               "lastPostImageWidth" : lastPost.imageWidth,
               "lastPostImageHeight" : lastPost.imageHeight,
+              "lastPostTimeStamp" : lastPost.timeStamp
             }
           ).catchError((e)=> print(e));
         }
@@ -264,19 +282,21 @@ class FirebaseDB {
       });
     }
 
-    void updateOldUserFavTags(User oldUser,String tagId,int arg){
+    void updateOldUserFavTags(User oldUser,String tagId,bool toAdd){
       DocumentReference userToUpdateRef = userRef.document(oldUser.id);
       Firestore.instance.runTransaction((Transaction transaction) async {
       DocumentSnapshot userToUpdateSnapshot = await transaction.get(userToUpdateRef);
         if(userToUpdateSnapshot.exists){
-          arg==1 ? 
-          await transaction.update(
-           userToUpdateSnapshot.reference,<String, dynamic>{"favTagsId" : FieldValue.arrayUnion([tagId]) }
-          ).catchError((e)=> print(e))
-          :
-          await transaction.update(
-           userToUpdateSnapshot.reference,<String, dynamic>{"favTagsId" : FieldValue.arrayRemove([tagId]) }
-          ).catchError((e)=> print(e));
+          if(toAdd){
+            await transaction.update(
+              userToUpdateSnapshot.reference,<String, dynamic>{"favTagsId" : FieldValue.arrayUnion([tagId]) }
+            ).catchError((e)=> print(e));
+          }
+          else{
+            await transaction.update(
+              userToUpdateSnapshot.reference,<String, dynamic>{"favTagsId" : FieldValue.arrayRemove([tagId]) }
+              ).catchError((e)=> print(e));
+          } 
         }
       });
     }
@@ -342,7 +362,8 @@ class FirebaseDB {
       return fbUser;
     }
   
-    Future<void> signOutUser()async {
+    Future<void> signOutUser(String uid) async {
+      db.updateUserLastConnectionTime(uid);
       await _auth.signOut();
     }
   
@@ -350,7 +371,7 @@ class FirebaseDB {
       //TODO: rajouter un nom d'utilisateur dans le createUser + textField dans LoginPage
       final FirebaseUser fbUser = await _auth.createUserWithEmailAndPassword(email: mail,password: passWord);
       String id =fbUser.uid;
-      final User user = User(mail,passWord,nom,prenom,id,userName,"",null,null,null,null);
+      final User user = User(mail,passWord,nom,prenom,id,userName,"",null,[],[],[],timeStamp());
       await db.createUserFirestore(user);
       return fbUser;
     }

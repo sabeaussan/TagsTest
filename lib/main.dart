@@ -66,6 +66,7 @@ class _MyAppState extends State<MyApp> {
     getCurrentUser=_provideCurrentUser();
   }
 
+  
 
   @override
   Widget build(BuildContext context) {

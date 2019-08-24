@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 
 import 'package:tags/Bloc/bloc_home_page.dart';
+import 'package:tags/Bloc/bloc_provider.dart';
+import 'package:tags/Bloc/main_bloc.dart';
+import 'package:tags/Models/user.dart';
 import 'package:tags/UI/mainBottomNavBar.dart';
 import 'package:tags/Utils/firebase_db.dart';
 import 'package:tags/pages/MapPage/filter_map_page.dart';
@@ -25,12 +28,15 @@ class Homepage extends StatefulWidget {
   
 }
 
-class HomepageState extends State<Homepage> with SingleTickerProviderStateMixin {
+class HomepageState extends State<Homepage> with SingleTickerProviderStateMixin,WidgetsBindingObserver {
   final BlocHomePage _blocHomePage = BlocHomePage();
   int index=0;
   static TabController _favTabController;   //déclarer en static pour y avoir accès depuis une instance dans favPage
 
   TabController get favTabController=> _favTabController;  
+
+  MainBloc _mainBloc;
+  User currentUser;
 
   Widget _buildAppBar(AppBarHomePage appBarPage){
 
@@ -69,7 +75,7 @@ class HomepageState extends State<Homepage> with SingleTickerProviderStateMixin 
           IconButton(
             icon: Icon(Icons.refresh),
             onPressed: (){
-              db.signOutUser();
+              db.signOutUser(currentUser.id);
             },
             iconSize: 30.0,
           )
@@ -89,18 +95,38 @@ class HomepageState extends State<Homepage> with SingleTickerProviderStateMixin 
   void initState() {
     // TODO: implement initState
     super.initState();
-
+    WidgetsBinding.instance.addObserver(this);
     _favTabController = TabController(vsync:this,length: 2);
+    _mainBloc = BlocProvider.of<MainBloc>(context);
+    currentUser =_mainBloc.currentUser;
   }
 
   @override
   void dispose() {
     // TODO: implement dispose
     super.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     print("[dispose HomePage]");
     //_favTabController.dispose();
   }
   
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) async{
+    //TODO: update le last time connection quand onPause est activé
+    //Dans onResume on regarde si les fav on une timestamp>lastConnectionTime
+    print("@@@@@@@DEBUG STATE@@@@@@@@@@@");
+    if(state==AppLifecycleState.paused && currentUser.id!=null){
+      print("updating last connection time : "+currentUser.id);
+      db.updateUserLastConnectionTime(currentUser.id);
+    }
+    else{
+      if(state==AppLifecycleState.resumed && currentUser.id!=null){
+        _mainBloc.listFavTags = await _mainBloc.getUserFavMarks();
+        _mainBloc.newFavContent=_mainBloc.hasChangedSinceLastConnection(_mainBloc.listFavTags);
+        _mainBloc.sendNewEvent();
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

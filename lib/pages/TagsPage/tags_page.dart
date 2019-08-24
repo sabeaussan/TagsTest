@@ -13,6 +13,7 @@ import 'package:tags/UI/user_circle_avatar.dart';
 import 'package:tags/Utils/firebase_db.dart';
 import 'package:tags/pages/TagsPage/tags_gallery.dart';
 
+
 class TagsPage extends StatefulWidget {
   final Tags  _tags;
   bool isFavAndNotNear;
@@ -31,7 +32,7 @@ class _TagsPageState extends State<TagsPage> {
   
 
   Widget _buildListDisplayedAndInputTile(AsyncSnapshot<Widget> snapshot) {
-    //construit l'UI de la pgae à afficher
+    //construit l'UI de la page à afficher
     return Center(
         child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -57,37 +58,31 @@ class _TagsPageState extends State<TagsPage> {
     _blocTagsPage = BlocTagsPage(widget._tags,keyGallery,keyChat);
     final MainBloc _mainBloc = BlocProvider.of<MainBloc>(context);
     currentUser =_mainBloc.currentUser;
-    //_isFav =getFavStatus(currentUser);
   }
 
-  bool getFavStatus(User user){
-    if(user.favTagsId!=null) return user.favTagsId.contains(widget._tags.id);
-     return false;
-  }
-
-
-
-  void _updateUserFavTags(User user){
-    //remplacer arg par _isFav dans la fonctio d'update
-    //ce sera plus lisible
+  void _toggleFavStatus(){
+    final bool favStatus = widget._tags.favStatus;
+    final bool favStatusHasChanged = widget._tags.favStatusHasChanged;
+    widget._tags.setFavStatusHasChanged(!favStatusHasChanged);
     setState(() {
-      widget._tags.favStatus?
-        db.updateOldUserFavTags(user, widget._tags.id, -1)
-        :
-        db.updateOldUserFavTags(user, widget._tags.id, 1);
+      widget._tags.setFavStatus(!favStatus);
     });
   }
+
+  void _updateUserFavMarks(){
+    if(widget._tags.favStatus) db.updateOldUserFavTags(currentUser, widget._tags.id, true);
+    else db.updateOldUserFavTags(currentUser, widget._tags.id,false);
+  }
+
+  
 
   void _updateNbFavTags(){
     //remplacer arg par _isFav dans la fonctio d'update
     //ce sera plus lisible
-    setState(() {
-      widget._tags.favStatus?
-        db.updateOldTagsNbFav(widget._tags.id,"nbFav" ,-1)
-        :
-        db.updateOldTagsNbFav(widget._tags.id, "nbFav",1);
-        widget._tags.setFavStatus(!widget._tags.favStatus);
-    });
+    widget._tags.favStatus?
+      db.updateOldTagsNbFav(widget._tags.id,"nbFav" ,1)
+      :
+      db.updateOldTagsNbFav(widget._tags.id, "nbFav",-1);
   }
 
 
@@ -135,11 +130,22 @@ class _TagsPageState extends State<TagsPage> {
     );
   }
 
+  void _updateFavFields() async{
+    _updateUserFavMarks();
+    _updateNbFavTags();
+  }
+
+  @override
+  void dispose() {
+    if(widget._tags.favStatusHasChanged){
+      _updateFavFields();
+    }
+    super.dispose();
+  }
 
 
   @override
   Widget build(BuildContext context) {
-    print(widget._tags.favStatus);
     const IconData fire = const IconData(0xf42f,
           fontFamily: CupertinoIcons.iconFont,
           fontPackage: CupertinoIcons.iconFontPackage);
@@ -151,9 +157,7 @@ class _TagsPageState extends State<TagsPage> {
               onPressed: (){
                 //Ca bug si on appuie trop vite
                 //mettre des await
-                _updateUserFavTags(currentUser);
-                _updateNbFavTags();
-                //widget._tags.setFavStatus(_isFav);
+                _toggleFavStatus();
               },
               icon: widget._tags.favStatus ? Icon(Icons.star, color: Colors.red,size: 35.0,) : Icon(Icons.star_border,color: Colors.black45,size: 35.0),
             ),
