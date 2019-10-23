@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Bloc/main_bloc.dart';
 import 'package:tags/Event/events.dart';
-import 'package:tags/Models/tags.dart';
+import 'package:tags/Models/publicmark.dart';
 import 'package:tags/UI/tags_tile.dart';
 
 
@@ -18,7 +18,7 @@ class PersoFavPage extends StatefulWidget {
 class _PersoFavPageState extends State<PersoFavPage> {
 
   MainBloc _mainBloc;
-  Future<List<Tags>> futureUserFavMark;
+  Future<List<PublicMark>> futureUserFavMark;
   /*ScrollController _scrollController;
   double lastExtent=0.0;
   int _fetchIndex=0;*/
@@ -51,70 +51,56 @@ class _PersoFavPageState extends State<PersoFavPage> {
   }
   */
 
-  List<Widget> _buildListPost(List<Tags> list, bool isLoading){
-    List<Widget> _widgetList =list.map((Tags tag){
-      final TagsTile tile = TagsTile(tag,"",true);
-      return Padding(
-        padding: EdgeInsets.all(0.0),
-        child: tile,
-      );
+  List<Widget> _buildListPost(List<PublicMark> list){
+    // Mettre l'icone de newContent à la place du near, fav ou distanceLabel
+    List<Widget> _widgetList =list.map((PublicMark mark){
+      final TagsTile markTile = TagsTile(mark);
+      return markTile;
     }).toList();
-    //_widgetList.add(_buildLoadingIndicator(isLoading));
     return _widgetList;
   }
 
-  String setDistanceLabel(Tags tag){
-    int dist = tag.distance.toInt();
-    int r = dist%10;
-    dist = dist - r +10;
-    return dist.toString();
-  }
   @override
   void initState() {
     super.initState();
     _mainBloc = BlocProvider.of<MainBloc>(context);
-    _mainBloc.newFavContent=false;
-    _mainBloc.sendNewEvent();
-    //_scrollController = ScrollController();
-    //_mainBloc.setFavTagsEdgeReached(false);
-    //_scrollController.addListener(_fetchMoreFavTags);
-    //_mainBloc.fetchMoreFavTagControllerSink.add(FetchMoreFavTagsEvent(_fetchIndex));
-    //_fetchIndex=_fetchIndex+2;
+  }
+
+  @override
+  void dispose() {
+    print("########## Disposing FavPage #########");
+    _mainBloc.newFavContentNotificationSeenControllerSink.add(NewFavContentSeen());
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
+    return RefreshIndicator(
+      onRefresh: () async {
+        setState(() {
+          
+        });
+        return;
+      },
+      child: FutureBuilder(
       future: _mainBloc.getUserFavMarks(),
-      initialData: _mainBloc.listFavTags,
-      builder: (BuildContext context, AsyncSnapshot<List<Tags>> listSnapshot){
+      initialData: _mainBloc.listFavMarks,
+      builder: (BuildContext context, AsyncSnapshot<List<PublicMark>> listSnapshot){
         if(!listSnapshot.hasData){
           return Center(
             child: CircularProgressIndicator(),
           );
         }
         if (listSnapshot.data.length==0) {
-            return Center(
-              child: Text("Vous n'avez pas enregistrer de favoris"),
-            );
+          return Center(
+            child: Text("Vous n'avez pas enregistrer de favoris"),
+          );
         }
         return ListView(
-          children: _buildListPost(listSnapshot.data,null),
-        );
-          /*return StreamBuilder(
-            stream: _mainBloc.loadingFavTagsControllerStream,
-            initialData: false,
-            builder: (BuildContext context, AsyncSnapshot snapshot){
-              return ListView(
-                controller: _scrollController,
-                children: _buildListPost(listSnapshot.data,snapshot.data),
-            
-              );
-            },
-          );*/
-        
-      }
-      
+          children: _buildListPost(listSnapshot.data),
+          );
+        }
+      ),
     );
   }
 }

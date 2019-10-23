@@ -1,11 +1,6 @@
-
-
-
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:tags/Bloc/bloc_tags_page.dart';
 import 'package:tags/Event/events.dart';
-import 'package:tags/Models/tags.dart';
 import 'package:tags/UI/post_tile.dart';
 
 class TagsGallery extends StatefulWidget {
@@ -14,10 +9,10 @@ class TagsGallery extends StatefulWidget {
   //TODO: trigger la query à chaque fois qu'on retourne sur la page, faire 
   //la query dans le initState si la consommation de read augmente trop
 
-  final Tags _tags;
+
   final BlocTagsPage _blocTagPage;
 
-  TagsGallery(this._tags,this._blocTagPage,{Key key}):super(key:key);
+  TagsGallery(this._blocTagPage,{Key key}):super(key:key);
 
   @override
   TagsGalleryState createState() {
@@ -33,10 +28,6 @@ class TagsGalleryState extends State<TagsGallery> {
   void _fetchMorePost() async {
     if(_scrollController.position.pixels==_scrollController.position.maxScrollExtent){
       if(lastExtent!=_scrollController.position.maxScrollExtent){
-        print("--------------------FetchMorePostEvent triggered----------------");
-        print("position : "+_scrollController.position.pixels.toString());
-        print("maxExtent : "+_scrollController.position.pixels.toString());
-        print("lastExtent : "+lastExtent.toString());
         lastExtent = _scrollController.position.maxScrollExtent;
         widget._blocTagPage.fetchMorePostControllerSink.add(FetchMorePostEvent());
       }
@@ -56,9 +47,8 @@ class TagsGalleryState extends State<TagsGallery> {
     );
   }
 
-  List<Widget> _buildListPost(List<DocumentSnapshot> list, bool isLoading){
-    List<Widget> _widgetList =list.map((DocumentSnapshot documents){
-      final PostTile postTile = PostTile.fromDocumentSnaptshot(documents,key: ValueKey(documents.documentID),);
+  List<Widget> _buildListPost(List<PostTile> list, bool isLoading){
+    List<Widget> _widgetList =list.map((PostTile postTile){
       postTile.setType(GALLERY);
       return Padding(
         padding: EdgeInsets.all(0.0),
@@ -89,9 +79,9 @@ class TagsGalleryState extends State<TagsGallery> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-      initialData: widget._blocTagPage.snapshotTagPostList,
-      stream: widget._blocTagPage.listTagPostControllerStream,
-      builder: (BuildContext context, AsyncSnapshot<List<DocumentSnapshot>> listSnapshot){
+      initialData: widget._blocTagPage.markPostsList,
+      stream: widget._blocTagPage.listMarkPostControllerStream,
+      builder: (BuildContext context, AsyncSnapshot<List<PostTile>> listSnapshot){
         if(!listSnapshot.hasData){
           return Center(
             child: CircularProgressIndicator(),

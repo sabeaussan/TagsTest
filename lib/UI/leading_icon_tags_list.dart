@@ -1,25 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:tags/Models/publicmark.dart';
 
 
 class LeadingIconTagsList extends StatelessWidget {
-  final bool _isNear;
-  final bool _isFav;
-  final String _distance;
   final Color _iconColorPrimary;
   final Color _iconColorSecondary;
+  final PublicMark _mark;
 
-  LeadingIconTagsList(this._isNear,this._isFav,this._distance,this._iconColorPrimary,this._iconColorSecondary);
+  LeadingIconTagsList(this._mark,this._iconColorPrimary,this._iconColorSecondary);
 
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
-    return _isFav?
+    return _mark.isFav?
               Padding(
               child: Icon(Icons.star,size: 27.0, color: _iconColorPrimary),
               padding: EdgeInsets.only(right: 10.0)
               )
               :
-            _isNear? 
+            _mark.isNear? 
                 Padding(
                   child: Icon(Icons.check_circle_outline,size: 27.0, color: _iconColorPrimary),
                   padding: EdgeInsets.only(right: 10.0)
@@ -30,7 +28,7 @@ class LeadingIconTagsList extends StatelessWidget {
                       icon: Icon(Icons.near_me,size: 27.0,color: _iconColorSecondary),
                       onPressed: (){}
                     ),
-                    Text(_distance+" m",style: TextStyle(fontSize: 10.0,color: _iconColorSecondary),)
+                    Text(_mark.distanceLabel+" m",style: TextStyle(fontSize: 10.0,color: _iconColorSecondary),)
                   ],
                 );
   }

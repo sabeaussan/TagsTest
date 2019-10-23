@@ -25,8 +25,6 @@ class BlocMessageBoxPage extends BlocBase{
 
   @override
   void dispose() {
-    _discussionController.close();
-    // TODO: implement dispose
-  }
+    _discussionController.close();  }
   
 }

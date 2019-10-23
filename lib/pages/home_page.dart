@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:tags/Bloc/bloc_home_page.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Bloc/main_bloc.dart';
+import 'package:tags/Event/events.dart';
 import 'package:tags/Models/user.dart';
 import 'package:tags/UI/mainBottomNavBar.dart';
 import 'package:tags/Utils/firebase_db.dart';
@@ -39,7 +40,6 @@ class HomepageState extends State<Homepage> with SingleTickerProviderStateMixin,
   User currentUser;
 
   Widget _buildAppBar(AppBarHomePage appBarPage){
-
     //Cette fonction fournit l'appBar de la page affiché sur la HomePage
     if(appBarPage==AppBarHomePage.mapBar){
       return AppBar(
@@ -56,8 +56,8 @@ class HomepageState extends State<Homepage> with SingleTickerProviderStateMixin,
             labelStyle: TextStyle(fontSize: 23.0,fontFamily: "InkFree",fontWeight: FontWeight.w800) ,
             controller: favTabController,
             tabs: <Widget>[
-              Tab(text: "Populaire",),
               Tab(text: "Mes favoris"),
+              Tab(text: "Populaire",),
             ],
           )
         );
@@ -70,17 +70,8 @@ class HomepageState extends State<Homepage> with SingleTickerProviderStateMixin,
     }
     if(appBarPage==AppBarHomePage.listBar){
       return AppBar(
-        leading: Icon(Icons.search),
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: (){
-              db.signOutUser(currentUser.id);
-            },
-            iconSize: 30.0,
-          )
-        ],
-        title: Text("Tags à proximité" ),
+        leading: Container(),
+        title: Text("Marks à proximité" ),
       );
     }
   }
@@ -99,31 +90,28 @@ class HomepageState extends State<Homepage> with SingleTickerProviderStateMixin,
     _favTabController = TabController(vsync:this,length: 2);
     _mainBloc = BlocProvider.of<MainBloc>(context);
     currentUser =_mainBloc.currentUser;
+    _mainBloc.appResumedControllerSink.add(ResumeAppEvent());
   }
 
   @override
-  void dispose() {
-    // TODO: implement dispose
+  void dispose() async {
+    // TODO: vérifier l'update
     super.dispose();
+    await db.updateUserLastConnectionTime(currentUser.id);
+    
     WidgetsBinding.instance.removeObserver(this);
-    print("[dispose HomePage]");
-    //_favTabController.dispose();
   }
   
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async{
     //TODO: update le last time connection quand onPause est activé
     //Dans onResume on regarde si les fav on une timestamp>lastConnectionTime
-    print("@@@@@@@DEBUG STATE@@@@@@@@@@@");
     if(state==AppLifecycleState.paused && currentUser.id!=null){
-      print("updating last connection time : "+currentUser.id);
-      db.updateUserLastConnectionTime(currentUser.id);
+      await db.updateUserLastConnectionTime(currentUser.id);
     }
     else{
       if(state==AppLifecycleState.resumed && currentUser.id!=null){
-        _mainBloc.listFavTags = await _mainBloc.getUserFavMarks();
-        _mainBloc.newFavContent=_mainBloc.hasChangedSinceLastConnection(_mainBloc.listFavTags);
-        _mainBloc.sendNewEvent();
+        _mainBloc.appResumedControllerSink.add(ResumeAppEvent());
       }
     }
   }

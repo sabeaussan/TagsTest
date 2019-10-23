@@ -8,18 +8,48 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Event/events.dart';
+import 'package:tags/Models/comment.dart';
+import 'package:tags/Models/user.dart';
+import 'package:tags/Models/userPost.dart';
+import 'package:tags/UI/comment_tile.dart';
+import 'package:tags/UI/post_tile.dart';
 
 
 class BlocCommentsPage implements BlocBase {
-  StreamSubscription _firestoreSub;
+  StreamSubscription _newCommentSub;
   StreamSubscription _fetchMoreSub;
+  static const int NB_COMMENT_FETCHED = 15;
+  // Liste contenant les documents afficher par la ListView de CommentPage
+  List<CommentTile> _commentsList=List<CommentTile>();
+  List<CommentTile> get snapshotPostCommentsList => _commentsList;
+  DocumentSnapshot _lastCommentsFetched;
+  bool _commentsEdgeReached=false;
+  bool _fetchingComments=false;
 
-  final String _postId;
+  final PostTile _commentedPost;
+  final UserPost _userPost;
+  final User _currentUser;
 
-  BlocCommentsPage(this._postId){
-    _firestoreSub = Firestore.instance.collection("PostComments").document(_postId)
-      .collection("Comments").limit(15).orderBy("id",descending:true).snapshots().listen(_onNewMessageSnapshot);
+  BlocCommentsPage(this._commentedPost,this._userPost,this._currentUser){
+    int index=0;
+    final String postOwnerId = _commentedPost.ownerId;
+    final int nbCommentsNotSeen = _commentedPost.nbCommentsNotSeen;
+    Firestore.instance.collection("PostComments").document(_commentedPost.id)
+      .collection("Comments").limit(NB_COMMENT_FETCHED).orderBy("timeStamp",descending:true).getDocuments()
+      .then((QuerySnapshot snap){
+        if(snap.documents.length<NB_COMMENT_FETCHED) _commentsEdgeReached = true;
+        else _lastCommentsFetched=snap.documents[snap.documents.length-1];
+        _commentsList=snap.documents.map((DocumentSnapshot doc){
+          bool needToBeNotify = false;
+          if(index<nbCommentsNotSeen && postOwnerId==_currentUser.id && _userPost!=null) needToBeNotify=true;
+          index++;
+          return CommentTile.fromDocumentSnapshot(doc,needToBeNotify);
+        }).toList();
+        _listPostCommentsControllerSink.add(_commentsList);
+      });
+    _newCommentSub = _newCommentsControllerStream.listen(_onNewComment);
     _fetchMoreSub = _fetchMoreCommentsControllerStream.listen(_fetchMoreComments);
+    
   }
 
   @override
@@ -27,33 +57,42 @@ class BlocCommentsPage implements BlocBase {
     _listPostCommentsController.close();
     _fetchMoreCommentsController.close();
     _loadingCommentsController.close();
-    _firestoreSub.cancel();
+    _newCommentsController.close();
+    _newCommentSub.cancel();
     _fetchMoreSub.cancel();
-    // TODO: implement dispose
   }
 
 
   //-----------------------------------------PostCommentsController--------------------------------------
 
+  //Pagination de la collection Comments
 
   
-  List<DocumentSnapshot> _snapshotPostCommentsList=List<DocumentSnapshot>();
-  DocumentSnapshot _lastCommentsFetched;
-  bool _commentsEdgeReached=false;
-  bool _fetchingComments=false;
 
-  List<DocumentSnapshot> get snapshotPostCommentsList => _snapshotPostCommentsList;
+
+  
   
 
-  final StreamController<List<DocumentSnapshot>> _listPostCommentsController = StreamController<List<DocumentSnapshot>>.broadcast();
+  
+  
+  // StreamController qui contient les comment à donner à la CommentPage
+  final StreamController<List<CommentTile>> _listPostCommentsController = StreamController<List<CommentTile>>.broadcast();
 
-  StreamSink<List<DocumentSnapshot>> get _listPostCommentsControllerSink => _listPostCommentsController.sink;
-  Stream<List<DocumentSnapshot>> get listPostCommentsControllerStream => _listPostCommentsController.stream;
+  StreamSink<List<CommentTile>> get _listPostCommentsControllerSink => _listPostCommentsController.sink;
+  Stream<List<CommentTile>> get listPostCommentsControllerStream => _listPostCommentsController.stream;
 
+
+  // StreamController qui contient l'évènement fetchMoreComment
   final StreamController<FetchMoreCommentEvent> _fetchMoreCommentsController = StreamController<FetchMoreCommentEvent>.broadcast();
 
   StreamSink<FetchMoreCommentEvent> get fetchMoreCommentsControllerSink => _fetchMoreCommentsController.sink;
   Stream<FetchMoreCommentEvent> get _fetchMoreCommentsControllerStream => _fetchMoreCommentsController.stream;
+
+  // StreamController qui contient les comment reçu depuis la commentPage et écris par User
+  final StreamController<Comment> _newCommentsController = StreamController<Comment>.broadcast();
+
+  StreamSink<Comment> get newCommentsControllerSink => _newCommentsController.sink;
+  Stream<Comment> get _newCommentsControllerStream => _newCommentsController.stream;
 
 
   final StreamController<bool> _loadingCommentsController = StreamController<bool>.broadcast();
@@ -66,17 +105,48 @@ class BlocCommentsPage implements BlocBase {
 
 
   void _fetchMoreComments(FetchMoreCommentEvent event) async {
+    // CallBack déclenché par le scroll controller
+    // fetch d'autre commentaires
+
+    // Si l'on a atteint la fin du nombre de doc
     if(_commentsEdgeReached) return;
-    print("-*-*-*-*-*-*-*-*-*-fetching more comments-*-*-*-*-*-*-*-*-*-*-*-*-*");
+
+    print(" ################ FETCHING COMMENT ############### ");
+    int index=0;
+    final String postOwnerId = _commentedPost.ownerId;
+    final int nbCommentsNotSeen = _commentedPost.nbCommentsNotSeen;
+
+    // Sinon on fetch d'autre document
+    // On envoie un event pour afficher le widget de chargement dans la commentPage
     _fetchingComments=true;
     _loadingCommentsControllerSink.add(_fetchingComments);
-    Firestore.instance.collection("PostComments").document(_postId)
-      .collection("Comments").orderBy("id",descending:true)
-      .startAfter([_lastCommentsFetched.documentID]).limit(15).getDocuments().then((snap){
+
+    // On fetch d'autre document en commençant par celui juste après le dernier reçu
+    Firestore.instance.collection("PostComments").document(_commentedPost.id)
+      .collection("Comments").startAfterDocument(_lastCommentsFetched)
+      .orderBy("timeStamp",descending:true).limit(NB_COMMENT_FETCHED).getDocuments().then((snap){
+
+        // Si le nombre de doc est >0 alors on enregistre l'index du dernier
+        // du dernier reçu dans _lastCommentsFetched pour le prochain fetch
         if(snap.documents.length>0) _lastCommentsFetched=snap.documents[snap.documents.length-1];
-        if(snap.documents.length<15) _commentsEdgeReached=true;
-        _snapshotPostCommentsList.addAll(snap.documents);
-        _listPostCommentsControllerSink.add(_snapshotPostCommentsList);
+
+        // Si le nombre de doc est < NB_COMMENT_FETCHED alors on atteint la limite 
+        // Il n'y a pas plus de doc à fetched => on met _commentsEdgeReached=true
+        if(snap.documents.length<NB_COMMENT_FETCHED) _commentsEdgeReached=true;
+
+        // On rajoute dans la liste afficher par la listView de CommentPage 
+        // les nouveaux doc fetched puis luis envoie
+        _commentsList.addAll(
+          snap.documents.map((DocumentSnapshot doc){
+            bool needToBeNotify = false;
+            if(index<nbCommentsNotSeen && postOwnerId==_currentUser.id && _userPost!=null) needToBeNotify=true;
+            index++;
+            return CommentTile.fromDocumentSnapshot(doc,needToBeNotify);
+          }).toList()
+        );
+        _listPostCommentsControllerSink.add(_commentsList);
+
+        // On desactive le widget de chargement
         _fetchingComments=false;
         _loadingCommentsControllerSink.add(_fetchingComments);
       });
@@ -84,26 +154,18 @@ class BlocCommentsPage implements BlocBase {
 
 
 
-  void _onNewMessageSnapshot(QuerySnapshot snapshot){
-    if(_snapshotPostCommentsList.length!=0){
-      snapshot.documentChanges.forEach((DocumentChange doc){
-        final int t1=int.parse(doc.document.data["timeStamp"]);
-        final int t2=int.parse(_snapshotPostCommentsList.elementAt(0).data["timeStamp"]);
-        final String id1 = doc.document.documentID;
-        final String id2 = _snapshotPostCommentsList.elementAt(0).documentID;
-        print("new doc : "+doc.document.data["content"]+t1.toString()+id1);
-        print("lastDoc : "+_snapshotPostCommentsList.elementAt(0).data["content"]+t2.toString()+id2);
-        if(doc.type==DocumentChangeType.added &&  t1 >= t2 && id1!=id2 ){
-            print("added!!!!!!!");
-            _snapshotPostCommentsList.insert(0,doc.document);
-        }
-      });
-    }
-    if(_snapshotPostCommentsList.length==0) {
-      _snapshotPostCommentsList.addAll(snapshot.documents);
-      _lastCommentsFetched=snapshot.documents[snapshot.documents.length-1];
-    }
-    _listPostCommentsControllerSink.add(_snapshotPostCommentsList);
+  void _onNewComment(Comment com){
+    // CallBack appelé lors de l'ajout d'un commentaire par un utilisateur
+
+    // Si la liste n'est pas vide il va falloir insérer au bon endroit le nouveaux doc
+    // Il s'agit du plus récent donc l doit apparaitre au début
+    if(_commentsList.length!=0) _commentsList.insert(0,CommentTile.fromComment(com));
+
+    // Sinon on se contente de l'ajouter car c'est le premier commentaire
+    else _commentsList.add(CommentTile.fromComment(com));
+
+    // On envoie les doc à la listView de la CommentPage
+    _listPostCommentsControllerSink.add(_commentsList);
   }
 
 

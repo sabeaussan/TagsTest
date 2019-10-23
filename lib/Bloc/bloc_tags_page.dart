@@ -5,30 +5,61 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Event/events.dart';
-import 'package:tags/Models/tags.dart';
+import 'package:tags/Models/post.dart';
+import 'package:tags/Models/publicmark.dart';
+import 'package:tags/UI/post_tile.dart';
 import 'package:tags/pages/TagsPage/tags_chat.dart';
 import 'package:tags/pages/TagsPage/tags_gallery.dart';
 
 class BlocTagsPage extends  BlocBase {
 
-  final Tags _tag;
-  List<DocumentSnapshot> _snapshotTagMessageList=List<DocumentSnapshot>();
-  List<DocumentSnapshot> _snapshotTagPostList=List<DocumentSnapshot>();
-  DocumentSnapshot _lastMessageFetched;
-  DocumentSnapshot _lastPostFetched;
-  bool _messageEdgeReached=false;
-  bool _fetchingMessage=false;
+  
 
-  bool _postEdgeReached=false;
-  bool _fetchingPost=false;
+  static const int NB_MESSAGES_FETCHED = 15;
+  static const int NB_POSTS_FETCHED = 10;
 
-  //liste contient les deux pages d'un tags
+  final PublicMark _mark;
+  
+  //liste contient les deux pages d'une mark
   List<Widget> _listPage;
+  PublicMark get mark => _mark;
+  
+  
+
+  BlocTagsPage(this._mark,keyGallery,keyChat) {
+
+    
+
+    print("-------------create blotagPage------------");
+    _listPage=[TagsGallery(this,key: keyGallery,),TagsChat(_mark,this,key:keyChat)];
+    numTabStream.listen(_onTabChange);
+
+    //---------------------Mark Message Stream---------------------------
+
+    Firestore.instance.collection("Tags").document(_mark.id)
+      .collection("TagsMessage").orderBy("timeStamp",descending:true).limit(NB_MESSAGES_FETCHED).snapshots().listen(_onNewMessageSnapshot);
+    _fetchMoreMessageControllerStream.listen(_fetchMoreMessage);
+
+    //-----------------------------------------------------------------
+
+    //---------------------Mark Post Stream-----------------------------
 
 
-  Tags get tags => _tag;
-  List<DocumentSnapshot> get snapshotTagMessageList => _snapshotTagMessageList;
-  List<DocumentSnapshot> get snapshotTagPostList => _snapshotTagPostList;
+    Firestore.instance.collection("Tags").document(_mark.id)
+      .collection("TagsPost").orderBy("timeStamp",descending:true).limit(NB_POSTS_FETCHED).getDocuments()
+      .then((QuerySnapshot snap){
+        if(snap.documents.length<NB_POSTS_FETCHED) _postEdgeReached = true;
+        else _lastPostFetched=snap.documents[snap.documents.length-1];
+        _markPostsList=snap.documents.map((DocumentSnapshot doc){
+          return PostTile.fromDocumentSnaptshot(doc,key: ValueKey(doc.documentID),);
+        }).toList();
+        _listMarkPostController.add(_markPostsList);
+      });
+    _newPostsControllerStream.listen(_onNewPost);
+    _fetchMorePostControllerStream.listen(_fetchMorePost);
+
+    //-----------------------------------------------------------------
+  }
 
 
 
@@ -50,7 +81,13 @@ class BlocTagsPage extends  BlocBase {
   StreamSink<QuerySnapshot> get _listTagsPageControllerSink => _listTagsPageController.sink;
   Stream<QuerySnapshot> get listTagsPageControllerStream => _listTagsPageController.stream;
 
-  //------------------------------------------Tag Message StreamControllers-----------------------------------------
+  //------------------------------------------ Pagination des messages StreamController ------------------------------------------------
+
+  List<DocumentSnapshot> _markMessagesList=List<DocumentSnapshot>();
+  DocumentSnapshot _lastMessageFetched;
+  bool _messageEdgeReached=false;
+  bool _fetchingMessage=false;
+  List<DocumentSnapshot> get markMessagesList => _markMessagesList;
 
   final StreamController<List<DocumentSnapshot>> _listTagMessageController = StreamController<List<DocumentSnapshot>>.broadcast();
 
@@ -68,20 +105,109 @@ class BlocTagsPage extends  BlocBase {
   StreamSink<bool> get _loadingMessageControllerSink => _loadingMessageController.sink;
   Stream<bool> get loadingMessageControllerStream => _loadingMessageController.stream;
 
-  //-----------------------------------------------------------------------------------------------------------------
+  
+
+  
 
 
-  //------------------------------------------Tag Post StreamController------------------------------------------------
 
-  final StreamController<List<DocumentSnapshot>> _listTagPostController = StreamController<List<DocumentSnapshot>>.broadcast();
+  void _fetchMoreMessage(FetchMoreTagMessageEvent event) async {
+    // CallBack déclenché par le scroll controller
+    // fetch d'autre commentaires
 
-  StreamSink<List<DocumentSnapshot>> get _listTagPostControllerSink => _listTagPostController.sink;
-  Stream<List<DocumentSnapshot>> get listTagPostControllerStream => _listTagPostController.stream;
+    // Si l'on a atteint la fin du nombre de doc
+    if(_messageEdgeReached) return;
+    print("-*-*-*-*-*-*-*-*-*-fetching more message-*-*-*-*-*-*-*-*-*-*-*-*-*");
+
+    // On envoie un event pour afficher le widget de chargement dans la commentPage
+    _fetchingMessage=true;
+    _loadingMessageControllerSink.add(_fetchingMessage);
+
+    // On fetch d'autre document en commençant par celui juste après le dernier reçu
+    Firestore.instance.collection("Tags").document(_mark.id)
+      .collection("TagsMessage").orderBy("timeStamp",descending:true)
+      .startAfterDocument(_lastMessageFetched).limit(NB_MESSAGES_FETCHED).getDocuments().then((snap){
+
+        // Si le nombre de doc est >0 alors on enregistre l'index du dernier
+        // du dernier reçu dans _lastCommentsFetched pour le prochain fetch
+        if(snap.documents.length>0) _lastMessageFetched=snap.documents[snap.documents.length-1];
+
+        // Si le nombre de doc est < NB_MESSAGES_FETCHED alors on atteint la limite 
+        // Il n'y a pas plus de doc à fetched => on met _messageEdgeReached=true
+        if(snap.documents.length<NB_MESSAGES_FETCHED) _messageEdgeReached=true;
+
+        // On rajoute dans la liste afficher par la listView de CommentPage 
+        // les nouveaux doc fetched puis luis envoie
+        _markMessagesList.addAll(snap.documents);
+        _listTagMessageControllerSink.add(_markMessagesList);
+
+        // On desactive le widget de chargement
+        _fetchingMessage=false;
+        _loadingMessageControllerSink.add(_fetchingMessage);
+      });
+  }
+
+
+
+  void _onNewMessageSnapshot(QuerySnapshot snapshot){
+    // CallBack appelé lors de l'ajout d'un commentaire par un utilisateur
+
+    // Si la liste n'est pas vide il va falloir insérer au bon endroit le nouveaux doc
+    // Il s'agit du plus récent donc l doit apparaitre au début
+    if(_markMessagesList.length!=0){
+
+      // On recoit tous les documents et pas juste celui qui a était ajouté
+      snapshot.documentChanges.forEach((DocumentChange doc){
+        // final int t1=int.parse(doc.document.data["timeStamp"]);
+        // final int t2=int.parse(_markMessagesList.elementAt(0).data["timeStamp"]);
+        // final String id1 = doc.document.documentID;
+        // final String id2 = _markMessagesList.elementAt(0).documentID;
+        // print("new doc : "+doc.document.data["content"]+t1.toString()+id1);
+        // print("lastDoc : "+_markMessagesList.elementAt(0).data["content"]+t2.toString()+id2);
+        if(doc.type==DocumentChangeType.added /*&&  t1 >= t2 && id1!=id2 */){
+            _markMessagesList.insert(0,doc.document);
+        }
+      });
+    }
+    if(_markMessagesList.length==0 && snapshot.documents.length!=0) {
+      // La liste est vide donc il s'agit de la première récupération de doc qu'on fait 
+      // i.e premier fetching on ajoute donc tous les doc
+      _markMessagesList.addAll(snapshot.documents);
+
+      // On enregistre l'index du dernier doc récupérer pour le prochain fetching
+      _lastMessageFetched=snapshot.documents[snapshot.documents.length-1];
+
+      // Si le nombre de doc est < NB_MESSAGES_FETCHED alors on atteint la limite 
+      // Il n'y a pas plus de doc à fetched => on met _messageEdgeReached=true
+      if(snapshot.documents.length < NB_MESSAGES_FETCHED) _messageEdgeReached=true;
+    }
+
+    // On envoie les doc à la listView de la CommentPage
+    _listTagMessageControllerSink.add(_markMessagesList);
+  }
+
+  //------------------------------------------ Pagination des posts StreamController ------------------------------------------------
+
+  List<PostTile> _markPostsList=List<PostTile>();
+  List<PostTile> get markPostsList => _markPostsList;
+  DocumentSnapshot _lastPostFetched;
+  bool _postEdgeReached=false;
+  bool _fetchingPost=false;
+
+  final StreamController<List<PostTile>> _listMarkPostController = StreamController<List<PostTile>>.broadcast();
+
+  StreamSink<List<PostTile>> get _listMarkPostControllerSink => _listMarkPostController.sink;
+  Stream<List<PostTile>> get listMarkPostControllerStream => _listMarkPostController.stream;
 
   final StreamController<FetchMorePostEvent> _fetchMorePostController = StreamController<FetchMorePostEvent>.broadcast();
 
   StreamSink<FetchMorePostEvent> get fetchMorePostControllerSink => _fetchMorePostController.sink;
   Stream<FetchMorePostEvent> get _fetchMorePostControllerStream => _fetchMorePostController.stream;
+
+  final StreamController<Post> _newPostsController = StreamController<Post>.broadcast();
+
+  StreamSink<Post> get newPostsControllerSink => _newPostsController.sink;
+  Stream<Post> get _newPostsControllerStream => _newPostsController.stream;
 
 
   final StreamController<bool> _loadingPostController = StreamController<bool>.broadcast();
@@ -89,83 +215,55 @@ class BlocTagsPage extends  BlocBase {
   StreamSink<bool> get _loadingPostControllerSink => _loadingPostController.sink;
   Stream<bool> get loadingPostControllerStream => _loadingPostController.stream;
 
+  void _onNewPost(Post post){
+    // CallBack appelé lors de l'ajout d'un post par un utilisateur
+    // Si la liste n'est pas vide il va falloir insérer au bon endroit le nouveaux doc
+    // Il s'agit du plus récent donc l doit apparaitre au début
+    if(_markPostsList.length!=0) _markPostsList.insert(0,PostTile.fromPost(post));
 
+    // Sinon on se contente de l'ajouter car c'est le premier post
+    else _markPostsList.add(PostTile.fromPost(post));
 
-  void _fetchMoreMessage(FetchMoreTagMessageEvent event) async {
-    if(_messageEdgeReached) return;
-    print("-*-*-*-*-*-*-*-*-*-fetching more message-*-*-*-*-*-*-*-*-*-*-*-*-*");
-    _fetchingMessage=true;
-    _loadingPostControllerSink.add(_fetchingMessage);
-    Firestore.instance.collection("Tags").document(_tag.id)
-      .collection("TagsMessage").orderBy("id",descending:true)
-      .startAfter([_lastMessageFetched.documentID]).limit(10).getDocuments().then((snap){
-        if(snap.documents.length>0) _lastMessageFetched=snap.documents[snap.documents.length-1];
-        if(snap.documents.length<10) _messageEdgeReached=true;
-        _snapshotTagMessageList.addAll(snap.documents);
-        _listTagMessageControllerSink.add(_snapshotTagMessageList);
-        _fetchingMessage=false;
-        _loadingPostControllerSink.add(_fetchingMessage);
-      });
+    // On envoie les doc à la listView de la MarkGallery
+    _listMarkPostController.add(_markPostsList);
   }
 
-
-
-  void _onNewMessageSnapshot(QuerySnapshot snapshot){
-    if(_snapshotTagMessageList.length!=0){
-      snapshot.documentChanges.forEach((DocumentChange doc){
-        final int t1=int.parse(doc.document.data["timeStamp"]);
-        final int t2=int.parse(_snapshotTagMessageList.elementAt(0).data["timeStamp"]);
-        final String id1 = doc.document.documentID;
-        final String id2 = _snapshotTagMessageList.elementAt(0).documentID;
-        print("new doc : "+doc.document.data["content"]+t1.toString()+id1);
-        print("lastDoc : "+_snapshotTagMessageList.elementAt(0).data["content"]+t2.toString()+id2);
-        if(doc.type==DocumentChangeType.added &&  t1 >= t2 && id1!=id2 ){
-            print("added!!!!!!!");
-            _snapshotTagMessageList.insert(0,doc.document);
-        }
-      });
-    }
-    if(_snapshotTagMessageList.length==0 && snapshot.documents.length!=0) {
-      _snapshotTagMessageList.addAll(snapshot.documents);
-      _lastMessageFetched=snapshot.documents[snapshot.documents.length-1];
-    }
-    _listTagMessageControllerSink.add(_snapshotTagMessageList);
-  }
-
-  void _onNewPostSnapshot(QuerySnapshot snapshot){
-    if(_snapshotTagPostList.length!=0){
-      snapshot.documentChanges.forEach((DocumentChange doc){
-        final int t1=int.parse(doc.document.data["timeStamp"]);
-        final int t2=int.parse(_snapshotTagPostList.elementAt(0).data["timeStamp"]);
-        final String id1 = doc.document.documentID;
-        final String id2 = _snapshotTagPostList.elementAt(0).documentID;
-        print("new doc : "+doc.document.data["description"]+t1.toString()+id1);
-        print("lastDoc : "+_snapshotTagPostList.elementAt(0).data["description"]+t2.toString()+id2);
-        if(doc.type==DocumentChangeType.added &&  t1 >= t2 && id1!=id2 ){
-            print("added!!!!!!!");
-            _snapshotTagPostList.insert(0,doc.document);
-        }
-      });
-    }
-    if(_snapshotTagPostList.length==0 && snapshot.documents.length!=0) {
-      _snapshotTagPostList.addAll(snapshot.documents);
-      _lastPostFetched=snapshot.documents[snapshot.documents.length-1];
-    }
-    _listTagPostControllerSink.add(_snapshotTagPostList);
-  }
 
   void _fetchMorePost(FetchMorePostEvent event) async {
+    // CallBack déclenché par le scroll controller
+    // fetch d'autre commentaires
+
+    // Si l'on a atteint la fin du nombre de doc
     if(_postEdgeReached) return;
     print("-*-*-*-*-*-*-*-*-*-fetching more post-*-*-*-*-*-*-*-*-*-*-*-*-*");
+
+    // On envoie un event pour afficher le widget de chargement dans la commentPage
     _fetchingPost=true;
     _loadingPostControllerSink.add(_fetchingPost);
-    Firestore.instance.collection("Tags").document(_tag.id)
-      .collection("TagsPost").orderBy("id",descending:true)
-      .startAfter([_lastPostFetched.documentID]).limit(2).getDocuments().then((snap){
+
+    // On fetch d'autre document en commençant par celui juste après le dernier reçu
+    Firestore.instance.collection("Tags").document(_mark.id)
+      .collection("TagsPost").orderBy("timeStamp",descending:true)
+      .startAfterDocument(_lastPostFetched).limit(NB_POSTS_FETCHED).getDocuments().then((snap){
+
+        // Si le nombre de doc est >0 alors on enregistre l'index du dernier
+        // du dernier reçu dans _lastCommentsFetched pour le prochain fetch
         if(snap.documents.length>0) _lastPostFetched=snap.documents[snap.documents.length-1];
-        if(snap.documents.length<2) _postEdgeReached=true;
-        _snapshotTagPostList.addAll(snap.documents);
-        _listTagPostControllerSink.add(_snapshotTagPostList);
+
+        // Si le nombre de doc est < NB_POSTS_FETCHED alors on atteint la limite 
+        // Il n'y a pas plus de doc à fetched => on met _postEdgeReached=true
+        if(snap.documents.length<NB_POSTS_FETCHED) _postEdgeReached=true;
+
+        // On rajoute dans la liste afficher par la listView de CommentPage 
+        // les nouveaux doc fetched puis luis envoie
+        _markPostsList.addAll(
+          snap.documents.map((DocumentSnapshot doc){
+            return PostTile.fromDocumentSnaptshot(doc);
+          })
+        );
+        _listMarkPostControllerSink.add(_markPostsList);
+
+        // On desactive le widget de chargement
         _fetchingPost=false;
         _loadingPostControllerSink.add(_fetchingPost);
       });
@@ -173,28 +271,7 @@ class BlocTagsPage extends  BlocBase {
 
 
 
-  BlocTagsPage(this._tag,keyGallery,keyChat) {
-    print("-------------create blotagPage------------");
-    _listPage=[TagsGallery(_tag,this,key: keyGallery,),TagsChat(_tag,this,key:keyChat)];
-    numTabStream.listen(_onTabChange);
-
-    //---------------------Tag Message Stream---------------------------
-
-    Firestore.instance.collection("Tags").document(_tag.id)
-      .collection("TagsMessage").orderBy("id",descending:true).limit(10).snapshots().listen(_onNewMessageSnapshot);
-    _fetchMoreMessageControllerStream.listen(_fetchMoreMessage);
-
-    //-----------------------------------------------------------------
-
-    //---------------------Tag Post Stream-----------------------------
-
-
-    Firestore.instance.collection("Tags").document(_tag.id)
-      .collection("TagsPost").orderBy("id",descending:true).limit(2).snapshots().listen(_onNewPostSnapshot);
-    _fetchMorePostControllerStream.listen(_fetchMorePost);
-
-    //-----------------------------------------------------------------
-  }
+  
 
   void _onTabChange(int numTab){
     _widgetPageSink.add(_listPage[numTab]);
@@ -210,10 +287,10 @@ class BlocTagsPage extends  BlocBase {
     _fetchMoreMessageController.close();
     _listTagsPageControllerSink.close();
     _loadingMessageController.close();
-    _listTagPostController.close();
+    _fetchMorePostController.close();
+    _listMarkPostController.close();
     _loadingPostController.close();
-
-    // TODO: implement dispose
+    _newPostsController.close();
   }
 
 

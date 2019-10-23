@@ -2,9 +2,10 @@ class Message {
   String _id;
   String _content;
   String _userId;
+  String _timeStamp;
 
 
-  Message(this._id,this._userId,this._content,);
+  Message(this._id,this._userId,this._content,this._timeStamp);
 
   void setId (String messageId){
     this._id = messageId;
@@ -15,6 +16,7 @@ class Message {
       "id"   : this._id,
       "content"       : this._content,
       "userId"       : this._userId,
+      "timeStamp" : this._timeStamp
     };
   }
 

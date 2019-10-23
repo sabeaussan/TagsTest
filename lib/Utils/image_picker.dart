@@ -1,43 +1,43 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:tags/Bloc/bloc_tags_page.dart';
-import 'package:tags/Models/tags.dart';
 import 'package:tags/pages/create_post_page.dart';
 
-class ImagePickerUtils extends StatefulWidget {
+const int GALLERY_PAGE = 0;
+
+class ImagePickerUtils extends StatelessWidget {
   final FocusNode _focusNode;
   final BlocTagsPage _blocTagsPage;
+  final bool _photoOnly;
 
-  ImagePickerUtils(this._focusNode,this._blocTagsPage);
+  ImagePickerUtils(this._focusNode,this._blocTagsPage,this._photoOnly);
 
-  _ImagePickerUtilsState createState() => _ImagePickerUtilsState();
-}
-
-class _ImagePickerUtilsState extends State<ImagePickerUtils> {
-  //C'est nul remplacer le FloatingActionButton par un widget classique pour benef imagePicker partout
-
-  static final  int GALLERY_PAGE = 0;
+  
 
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton(
       elevation: 0.0,
-      onPressed: () {
-        widget._focusNode.unfocus();
-        widget._blocTagsPage.numTabSink.add(GALLERY_PAGE);
-        openPicker(context);
+      onPressed: () async{
+        _focusNode.unfocus();
+        _blocTagsPage.numTabSink.add(GALLERY_PAGE);
+        _photoOnly? 
+          await takePicture(context, ImageSource.camera)
+          :
+          openPicker(context);
       },
       mini: true,
       child: Icon(
         Icons.add_a_photo,
         size: 21.0,
       ),
-      backgroundColor: Colors.deepOrange,
+      backgroundColor: Colors.red,
     );
   }
 
-  void openPicker(BuildContext context) {
+  void openPicker(BuildContext context){
     showModalBottomSheet(
         context: context,
         builder: (BuildContext context) {
@@ -52,8 +52,8 @@ class _ImagePickerUtilsState extends State<ImagePickerUtils> {
                     Icons.camera_alt,
                     size: 40.0,
                   ),
-                  onPressed: () {
-                    takePicture(context, ImageSource.camera);
+                  onPressed: () async {
+                    await takePicture(context, ImageSource.camera);
                     //Navigator.of(context).pop();
                   },
                 ),
@@ -63,11 +63,11 @@ class _ImagePickerUtilsState extends State<ImagePickerUtils> {
                     Icons.collections,
                     size: 40.0,
                   ),
-                  onPressed: () {
-                    takePicture(context, ImageSource.gallery);
+                  onPressed: () async {
+                    await takePicture(context, ImageSource.gallery);
                     //Navigator.of(context).pop();
                   },
-                ),
+                )
               ],
             ),
           );
@@ -75,11 +75,12 @@ class _ImagePickerUtilsState extends State<ImagePickerUtils> {
   }
 
   Future<void> takePicture(BuildContext context, ImageSource source) async {
-    final Tags tag = widget._blocTagsPage.tags;
-    final File imageFile = await ImagePicker.pickImage(
-        source: source, maxWidth: 1200, maxHeight: 1600);
+    final deviceWidth = MediaQuery.of(context).size.width;
+    final deviceHeight = MediaQuery.of(context).size.height;
+    final File imageFile = await ImagePicker.pickImage(source: source, maxWidth:deviceWidth*4 , maxHeight: deviceHeight*4);
+    if(imageFile==null) return;
     Navigator.of(context).push(MaterialPageRoute(
-        builder: ((BuildContext context) => CreatePostPage(imageFile,tag))));
+        builder: ((BuildContext context) => CreatePostPage(imageFile,_blocTagsPage))));
     return;
   }
 }

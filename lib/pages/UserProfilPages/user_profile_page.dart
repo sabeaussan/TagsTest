@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
@@ -28,6 +29,8 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
   User currentUser;
   MainBloc _mainBloc;
   Stream<User> stream;
+  int _nbPosts;
+  Future<QuerySnapshot> _futureUserPosts;
 
   Widget _buildNewMessageIcon(IconData icon){
     return Stack(
@@ -47,7 +50,7 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
   
 
 
-  Widget _buildTabs(User currentUser){
+  Widget _buildTabs(User currentUser,QuerySnapshot userPosts){
     const IconData telegram = const IconData(0xf474,
           fontFamily: CupertinoIcons.iconFont,
           fontPackage: CupertinoIcons.iconFontPackage);
@@ -61,13 +64,7 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
               labelPadding: EdgeInsets.only(bottom: 10.0),
               controller:_userProfileTabController,
               tabs: <Widget>[
-                StreamBuilder<bool>(
-                  stream: _mainBloc.newCommentControllerStream ,
-                  initialData: _mainBloc.newComment ,
-                  builder: (BuildContext context, AsyncSnapshot<bool> snapshotComment){
-                    return snapshotComment.data? _buildNewMessageIcon(Icons.collections) :  Icon(Icons.collections,size: 32.0,);
-                  },
-                ),
+                Icon(Icons.collections,size: 32.0,),
                 StreamBuilder<bool>(
                   stream:_mainBloc.newMessageControllerStream ,
                   initialData:  _mainBloc.newMessage ,
@@ -80,7 +77,7 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
             Expanded(
               child: TabBarView(
               children: <Widget>[
-                _postGrid,
+                PostGrid(),
                 _messageBoxList
               ],
               controller:_userProfileTabController ,
@@ -109,7 +106,9 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
             FlatButton(
               child: Text("oui",style: TextStyle(fontSize: 20.0),),
               onPressed:() async{
+                _mainBloc.dispose();
                 Navigator.of(context).pop();
+                await db.updateUserLastConnectionTime(currentUser.id);
                 await db.signOutUser(currentUser.id);
               } ,
             ),
@@ -175,6 +174,10 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
 
 
   Widget _buildUserProfileColumn(User currentUser,BuildContext context){ 
+    const IconData configuration = const IconData(0xf2f7,
+          fontFamily: CupertinoIcons.iconFont,
+          fontPackage: CupertinoIcons.iconFontPackage);
+    //TODO: séparer en différent élément graphique
     return Expanded(
       flex: 0,
       child: Center(
@@ -191,35 +194,32 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
               SizedBox(
                 width: 10.0,
               ),
-                GestureDetector(
-              onTap: _currentUserPhoto!=null?
-               (){}
-              :
-              null ,
-              child:currentUser.photoUrl!=null ? 
+              currentUser.photoUrl!=null ? 
               CircleAvatar(
                 radius: MediaQuery.of(context).size.width*0.16,
                 backgroundImage:  _currentUserPhoto,
               )
               :
               CircleAvatarInitiales(currentUser),
-            ),
-            SizedBox(
-              width: 12.0,
-            ),
+              SizedBox(
+                width: 12.0,
+              ),
               Expanded(
-                flex: 3,
+               flex: 3,
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: <Widget>[
-
-                       Text(currentUser.userName,style: TextStyle(fontSize: 25.0,fontWeight: FontWeight.bold,color: Colors.white),),
+                    SizedBox(
+                      height: 40.0,
+                    ),
+                    Text(currentUser.userName,style: TextStyle(fontSize: 25.0,fontWeight: FontWeight.bold,color: Colors.white),),
                     
-          FlatButton(
+          /*FlatButton(
             child: Text("Modifier profil",style: TextStyle(color: Colors.white),),
             onPressed: (){
                 Navigator.of(context).push(
@@ -229,7 +229,38 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
                 );
             },
             color: Colors.transparent,          
+          ),*/
+          SizedBox(
+            height: 15.0,
           ),
+          Row(
+            children: <Widget>[
+              SizedBox(
+                width: 20.0,
+              ),
+              Column(
+                children: <Widget>[
+                  Text(_nbPosts.toString(),style: TextStyle(fontSize: 18.0,fontWeight: FontWeight.w500,color: Colors.white),),
+                  Text("Posts",style: TextStyle(fontSize: 18.0,fontWeight: FontWeight.w500,color: Colors.white),)
+                ],
+              ),
+              SizedBox(
+                width: 20.0,
+              ),
+              Column(
+                children: <Widget>[
+                  Text(currentUser.nbMarks.toString(),style: TextStyle(fontSize: 18.0,fontWeight: FontWeight.w500,color: Colors.white),),
+                  Text("Marks",style: TextStyle(fontSize: 18.0,fontWeight: FontWeight.w500,color: Colors.white),)
+                ],
+              ),
+              /*SizedBox(
+                width: 9.0,
+              ),
+              IconButton(
+                icon: Icon(Icons.edit,color: Colors.white,),
+              )*/
+            ],
+          )
                   ],
                 ),
               ),
@@ -239,16 +270,24 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: <Widget>[
                     PopupMenuButton<int>(
-                    onSelected: (int choice)async {
+                    onSelected: (int choice) async {
+                      //TODO: réordonner les choix
                       switch(choice){
                         case 0:   //se déconnecter
                           await _buildLogOutDialog();
                           break;
-                        case 1: //mode privé
+                        /*case 1: //mode privé
                           await _buildPrivateDialog();
                           break;
                         case 2: //désactiver messages
                           await _buildStopChatDialog();
+                          break;*/
+                        case 3:
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (BuildContext context) => ModifProfilePage(currentUser)
+                            )
+                          );
                           break;
                       }
                     },
@@ -258,17 +297,21 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
                         child: Text("se déconnecter"),
                         value: 0 ,
                         ),
-                        PopupMenuItem(
+                        /*PopupMenuItem(
                         child: Text("rendre le profil privé"),
                         value: 1 ,
                         ),
                         PopupMenuItem(
                         child: Text("desactiver les nouveaux messages"),
                         value: 2 ,
+                        ),*/
+                        PopupMenuItem(
+                        child: Text("Modifier le profil"),
+                        value: 3 ,
                         ),
                       ];
                     },
-                    icon: Icon(Icons.menu,size: 30.0,color: Colors.white,),
+                    icon: Icon(configuration,size: 27.0,color: Colors.white,),
                     
                     ),
                   ],
@@ -287,50 +330,65 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     print("[initState userProfilePage]");
     _mainBloc = BlocProvider.of<MainBloc>(context);
     currentUser =_mainBloc.currentUser;
     _userProfileTabController =TabController(vsync: this,length: 2);
     _messageBoxList = const MessageBoxList();
-    _postGrid=PostGrid(currentUser);
+    _futureUserPosts=_getUserPost();
     stream =  _mainBloc.userUpdateControllerStream;
   }
 
+  Future<QuerySnapshot> _getUserPost() async {
+    final QuerySnapshot userPosts = await Firestore.instance.collection("User").document(currentUser.id).collection("UserPost").orderBy("timeStamp",descending : true).getDocuments();
+    _nbPosts=userPosts.documents.length;
+    return userPosts;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return  StreamBuilder(
-      stream: stream ,
-      initialData: currentUser ,
-      builder: (BuildContext context, AsyncSnapshot<User> snapshot){
-        if(!snapshot.hasData){
+    return  FutureBuilder(
+      future: _futureUserPosts,
+      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> userPostSnapshot){
+        if(!userPostSnapshot.hasData){
           return Center(
             child: CircularProgressIndicator(),
           );
         }
-        _currentUserPhoto =_mainBloc.userPhoto;
-        return Column(
-          children: <Widget>[
-          _buildUserProfileColumn(snapshot.data,context,),
-            SizedBox(
-              height: 10.0,
-            ),
-            Container(
-              child: Text(currentUser.bio),
-              margin: EdgeInsets.all(10.0),
-            ),
-            SizedBox(
-              height: 20.0,
-            ),
-            Expanded(
-              flex: 3,
-              child: _buildTabs(snapshot.data),
-            )
-          ],
+        _nbPosts=userPostSnapshot.data.documents.length;
+        return StreamBuilder(
+          stream: stream ,
+          initialData: currentUser ,
+          builder: (BuildContext context, AsyncSnapshot<User> snapshot){
+            if(!snapshot.hasData){
+              return Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+            _currentUserPhoto =_mainBloc.userPhoto;
+            return Column(
+              children: <Widget>[
+              _buildUserProfileColumn(snapshot.data,context,),
+                SizedBox(
+                  height: 10.0,
+                ),
+                Container(
+                  child: Text(currentUser.bio),
+                  margin: EdgeInsets.all(10.0),
+                ),
+                SizedBox(
+                  height: 20.0,
+                ),
+                Expanded(
+                  flex: 3,
+                  child: _buildTabs(snapshot.data,userPostSnapshot.data),
+                )
+              ],
+            );
+          },
         );
-      },
+      }
     );
   }
 }

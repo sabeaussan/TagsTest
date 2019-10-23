@@ -1,7 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:tags/Models/user.dart';
 import 'package:tags/Models/userPost.dart';
 
 import 'package:tags/UI/post_tile.dart';
@@ -10,11 +9,10 @@ import 'package:tags/pages/comments_page.dart';
 
 class OtherUserPostGrid extends StatelessWidget {
 
-  //TODO: faire un futureBuilder ou stbld
 
-  final User _user;
+  final List<DocumentSnapshot> _userPosts;
 
-  OtherUserPostGrid(this._user);
+  OtherUserPostGrid(this._userPosts);
 
   void _navigateCommentsPage(BuildContext context,UserPost userPost) async {
     DocumentSnapshot postSnap = await Firestore.instance.collection("Tags").document(userPost.tagOwnerId).collection("TagsPost").document(userPost.id).get();
@@ -22,7 +20,7 @@ class OtherUserPostGrid extends StatelessWidget {
       MaterialPageRoute(
         builder: (BuildContext context)  {
           PostTile postFromTagsPost =  PostTile.fromDocumentSnaptshot(postSnap); 
-          return CommentsPage(postFromTagsPost);
+          return CommentsPage(postFromTagsPost,userPost: userPost);
         }
       )
     );
@@ -30,9 +28,9 @@ class OtherUserPostGrid extends StatelessWidget {
 
   
 
-    List<Widget> _buildUserPostGrid(BuildContext context, QuerySnapshot snapshot) {
-    final List<Widget> gridItems =snapshot.documents.map((DocumentSnapshot document){
-      final UserPost userPostTileItems =  UserPost.fromDocumentSnaptshot(document);  
+    List<Widget> _buildUserPostGrid(BuildContext context, List<DocumentSnapshot> userPosts) {
+    final List<Widget> gridItems =userPosts.map((DocumentSnapshot document){
+    final UserPost userPostTileItems = UserPost.fromDocumentSnaptshot(document);  
       return GestureDetector(
           onTap: (){
             _navigateCommentsPage(context,userPostTileItems);
@@ -68,16 +66,7 @@ class OtherUserPostGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return
-     StreamBuilder(
-       stream: Firestore.instance.collection("User").document(_user.id).collection("UserPost").snapshots(),
-       builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot){
-        if(!snapshot.hasData){
-          return Center(
-            child: CircularProgressIndicator(),
-          );
-        }
-        if (snapshot.data.documents.length==0) {
+        if (_userPosts.length==0) {
             return Center(
               child: Text("Aucun post"),
             );
@@ -85,12 +74,10 @@ class OtherUserPostGrid extends StatelessWidget {
         return GridView.count(
           crossAxisCount: 3,
           childAspectRatio: 1.0,
-          children: _buildUserPostGrid(context,snapshot.data),
+          children: _buildUserPostGrid(context,_userPosts),
           mainAxisSpacing: 5.0,
           crossAxisSpacing: 5.0,
           shrinkWrap: true,
         );
-       }
-     );
   }
 }

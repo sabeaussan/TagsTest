@@ -34,7 +34,7 @@ class _FilterMapDrawerState extends State<FilterMapDrawer> {
                     max: 100.0,
                     min: 5.0,
                     inactiveColor: Colors.black12,
-                    activeColor: Colors.deepOrange,
+                    activeColor: Colors.red,
                     onChanged: (double value){
                       setState(() {
                         valueNbPostSlider=value;
@@ -72,7 +72,7 @@ class _FilterMapDrawerState extends State<FilterMapDrawer> {
                     max: 100.0,
                     min: 5.0,
                     inactiveColor: Colors.black12,
-                    activeColor: Colors.deepOrange,
+                    activeColor: Colors.red,
                     onChanged: (double value){
                       setState(() {
                         valueNbMessageSlider=value;
@@ -98,7 +98,7 @@ class _FilterMapDrawerState extends State<FilterMapDrawer> {
            
              CheckboxListTile(
               value: valueCheckBoxPublic ,
-              activeColor: Colors.deepOrange,
+              activeColor: Colors.red,
               onChanged: (bool val){
                 setState(() {
                   valueCheckBoxPublic=val;
@@ -112,7 +112,7 @@ class _FilterMapDrawerState extends State<FilterMapDrawer> {
               //Mettre tool Tip genre point d'intérogation
               //subtitle: Text("accessible à tout le monde",style:TextStyle(fontSize:13.0)),
               value: valueCheckBoxPrive ,
-              activeColor: Colors.deepOrange,
+              activeColor: Colors.red,
               onChanged: (bool val){
                 setState(() {
                   valueCheckBoxPrive=val;
@@ -125,7 +125,7 @@ class _FilterMapDrawerState extends State<FilterMapDrawer> {
                //Mettre tool Tip genre point d'intérogation
               //subtitle: Text("accessible à tout le monde",style:TextStyle(fontSize:13.0)),
               value: valueCheckBoxPersonnel ,
-              activeColor: Colors.deepOrange,
+              activeColor: Colors.red,
               onChanged: (bool val){
                 setState(() {
                   valueCheckBoxPersonnel=val;
@@ -137,7 +137,7 @@ class _FilterMapDrawerState extends State<FilterMapDrawer> {
                //Mettre tool Tip genre point d'intérogation
               //subtitle: Text("accessible à tout le monde",style:TextStyle(fontSize:13.0)),
               value: valueCheckBoxFavorite ,
-              activeColor: Colors.deepOrange,
+              activeColor: Colors.red,
               onChanged: (bool val){
                 setState(() {
                   valueCheckBoxFavorite=val;
@@ -169,7 +169,7 @@ class _FilterMapDrawerState extends State<FilterMapDrawer> {
             onPressed: (){
               
             },
-            color: Colors.deepOrange,
+            color: Colors.red,
             child: Text("Appliquer",style: TextStyle(color: Colors.white,fontSize: 27.0,fontWeight: FontWeight.bold),),
           )
         ],

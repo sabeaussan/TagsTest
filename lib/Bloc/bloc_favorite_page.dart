@@ -1,9 +1,8 @@
-import 'package:tags/Bloc/bloc_provider.dart';
+import 'bloc_provider.dart';
 
-class BlocFavoritePage extends BlocBase {
+class BlocFavoritePage extends BlocBase{
   @override
   void dispose() {
-    // TODO: implement dispose
   }
-  
+
 }

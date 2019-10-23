@@ -1,26 +1,28 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Bloc/main_bloc.dart';
 import 'package:tags/Models/user.dart';
-import 'package:tags/Utils/firebase_db.dart';
 import 'package:tags/pages/home_page.dart';
 import './pages/login_page.dart';
 import 'dart:async';
 
-void main() => runApp(MyApp());
+void main() {
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then((_){
+    runApp(MyApp());
+  });
+}
 
 
 ThemeData _buildThemeData (){
 
    return ThemeData(
           primarySwatch: Colors.red,
-          //primaryColorLight: Colors.orange,
           primaryIconTheme: IconThemeData(
             color: Colors.red,
             size: 30.0
           ),
-          //accentTextTheme: ,
           primaryTextTheme: TextTheme(
             title: TextStyle(color: Colors.red,
                   fontSize: 25.0,
@@ -52,38 +54,31 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   Future<User> getCurrentUser;
   MainBloc mainBloc;
-
-  Future<User> _provideCurrentUser() async {
-   print("******[_provideCurrentUser] trigered*********");
-   final User  currentUser = await db.getCurrentUser();
-   return currentUser;
-  }
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    getCurrentUser=_provideCurrentUser();
-  }
-
+  String uid;
+  FirebaseUser fbU;
   
 
   @override
   Widget build(BuildContext context) {
         return  StreamBuilder(
           stream: FirebaseAuth.instance.onAuthStateChanged,
-          builder: (BuildContext context, AsyncSnapshot snapshot){
-            mainBloc=MainBloc();
+          builder: (BuildContext context, AsyncSnapshot<FirebaseUser> snapshot){
+            fbU=snapshot.data;
+            
+            if (snapshot.data!=null ){
+              mainBloc = MainBloc();
+            }
             print("******[stb onAuthStateChanged] trigered*********");
+            print(fbU);
             return BlocProvider(
-              bloc: snapshot.hasData? mainBloc : null,
+              bloc: snapshot.data!=null ? mainBloc : null,
               child: MaterialApp(
                 title: 'Tags',
                 theme: _buildThemeData(),
-                home: snapshot.hasData? FutureBuilder<User>(
-                  future:getCurrentUser,
-                  builder:(BuildContext context, AsyncSnapshot<User> snapshot){
-                    if(!snapshot.hasData){
+                home: snapshot.data!=null? FutureBuilder<int>(
+                  future:mainBloc.provideCurrentUser(snapshot.data.uid),
+                  builder:(BuildContext context, AsyncSnapshot<int> userSnapshot){
+                    if(!userSnapshot.hasData){
                       return Material(
                         color: Colors.white,
                         child: Center(
@@ -92,7 +87,7 @@ class _MyAppState extends State<MyApp> {
                       );
                     }
                     return Homepage();
-                  } ,
+                  },
                 ): LoginPage(),
               ),
             );

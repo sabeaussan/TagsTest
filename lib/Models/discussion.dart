@@ -12,6 +12,7 @@ class Discussion {
   String _lastMessage;
   bool _lastMessageSeen;
   String _timeStamp;
+  int _notifId;
 
   Discussion(this._lastMessage,this._lastMessageSeen,this._partnerImageUrl,this._partnerUserName,this._partnerId,this._timeStamp);
 
@@ -38,5 +39,11 @@ class Discussion {
   void setId(String discId){
     this._id=discId;
   }
+
+  void setNotifId(int id){
+    this._notifId=id;
+  }
+
+  get notifId => _notifId;
 
 }

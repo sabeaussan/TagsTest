@@ -11,9 +11,11 @@ class User {
   String _id;
   String _bio;
   List<dynamic> _favPostId;
-  List<dynamic> _favTagsId;    //Liste de Map<String,String> qui contient lastPostIdSeen
-  List<dynamic> _favCommId;
+  List<dynamic> _favTagsId;
+  //List<dynamic> _contacts;    
   String _lastConnectionTime;
+  int _nbMarks;
+
 
 
   User(
@@ -23,11 +25,6 @@ class User {
     this._prenom,
     this._id,
     this._userName,
-    this._bio,
-    this._photoUrl,
-    this._favCommId,
-    this._favPostId,
-    this._favTagsId,
     this._lastConnectionTime
   );
 
@@ -40,11 +37,12 @@ class User {
     _prenom=snapshot.data["prenom"],
     _bio =snapshot.data["bio"],
     _userName=snapshot.data["userName"],
-    _favCommId=snapshot.data["favCommId"],
     _favPostId=snapshot.data["favPostId"],
     _favTagsId=snapshot.data["favTagsId"],
+   // _contacts=snapshot.data["contacts"],
     _lastConnectionTime=snapshot.data["lastConnectionTime"],
-    _photoUrl=snapshot.data["photoUrl"];
+    _photoUrl=snapshot.data["photoUrl"],
+    _nbMarks=snapshot.data["nbMarks"];
 
     User.fromDiscussion(String partnerId,String partnerUserName,String partnerPhotoUrl):
     _id=partnerId,
@@ -59,14 +57,16 @@ class User {
       "nom"   : this._nom,
       "prenom"       : this._prenom,
       "userName"   : this._userName,
-      "bio" : this._bio,
+      "bio" : "",
       "photoUrl"   : this._photoUrl,
-      "favCommId"       : this._favCommId,
-      "favPostId"   : this._favPostId,
-      "favTagsId"   : this._favTagsId,
-      "lastConnectionTime" : this._lastConnectionTime
+      "favPostId"   : [],
+      "favTagsId"   : [],
+      "contact" : [],
+      "lastConnectionTime" : this._lastConnectionTime,
+      "nbMarks" : 0 
     };
   }
+
 
   String get id => _id;
   String get mail => _mail;
@@ -77,6 +77,7 @@ class User {
   String get photoUrl => _photoUrl;
   List<dynamic> get favPostId => _favPostId;
   List<dynamic> get favTagsId => _favTagsId;
-  List<dynamic> get favCommId => _favCommId;
+  //List<dynamic> get contacts => _contacts;
   String get lastConnectionTime => _lastConnectionTime;
+  int get nbMarks => _nbMarks;
 }

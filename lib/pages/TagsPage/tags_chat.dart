@@ -1,16 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Bloc/bloc_tags_page.dart';
 import 'package:tags/Event/events.dart';
-import 'package:tags/Models/tags.dart';
+import 'package:tags/Models/publicmark.dart';
 import 'package:tags/UI/message_tile.dart';
 
 class TagsChat extends StatefulWidget {
   //Contient le chat associé à un tags
   //TODO: va peut être falloir le transformer en stful
 
-  final Tags tag;
+  final PublicMark tag;
   final BlocTagsPage _blocTagPage;
 
   TagsChat(this.tag,this._blocTagPage,{Key key}):super(key:key);
@@ -34,10 +33,6 @@ class TagsChatState extends State<TagsChat>{
   void _fetchMoreMessage() async {
     if(_scrollController.position.pixels==_scrollController.position.maxScrollExtent){
       if(lastExtent!=_scrollController.position.maxScrollExtent){
-        print("--------------------FetchMoreMessageEvent triggered----------------");
-        print("position : "+_scrollController.position.pixels.toString());
-        print("maxExtent : "+_scrollController.position.pixels.toString());
-        print("lastExtent : "+lastExtent.toString());
         lastExtent = _scrollController.position.maxScrollExtent;
         widget._blocTagPage.fetchMoreMessageControllerSink.add(FetchMoreTagMessageEvent());
       }
@@ -49,7 +44,7 @@ class TagsChatState extends State<TagsChat>{
   void initState() {
     // TODO: implement initState
     super.initState();
-    print("---------[initState tagsChat]-----------");
+    // print("---------[initState tagsChat]-----------");
     _scrollController = ScrollController();
     _scrollController.addListener(_fetchMoreMessage);
     
@@ -79,7 +74,7 @@ class TagsChatState extends State<TagsChat>{
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-      initialData: widget._blocTagPage.snapshotTagMessageList,
+      initialData: widget._blocTagPage.markMessagesList,
       stream: widget._blocTagPage.listTagMessageControllerStream ,
       builder: (BuildContext context, AsyncSnapshot<List<DocumentSnapshot>> listSnapshot){
         if(!listSnapshot.hasData){
@@ -92,9 +87,9 @@ class TagsChatState extends State<TagsChat>{
               child: Text("ajoute un premier message !"),
             );
           }
-        print("******[stb tagsChat] trigered********* "+listSnapshot.data.length.toString());
+        // print("******[stb tagsChat] trigered********* "+listSnapshot.data.length.toString());
         return StreamBuilder(
-          stream: widget._blocTagPage.loadingPostControllerStream ,
+          stream: widget._blocTagPage.loadingMessageControllerStream ,
           initialData: false ,
           builder: (BuildContext context, AsyncSnapshot snapshot){
             return ListView.builder(
@@ -106,7 +101,7 @@ class TagsChatState extends State<TagsChat>{
                     if(index==listSnapshot.data.length) return  _buildLoadingIndicator(snapshot.data);
                     return Column(
                       children: <Widget>[
-                        MessageTile.fromDocumentSnapshot(listSnapshot.data[index],key: ValueKey(listSnapshot.data[index].documentID),),
+                        MessageTile.fromDocumentSnapshot(listSnapshot.data[index]),
                         Divider()
                       ],
                     );

@@ -2,27 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Bloc/bloc_tags_page.dart';
 import 'package:tags/Bloc/main_bloc.dart';
+import 'package:tags/Models/publicmark.dart';
 import 'package:tags/Models/tags_message.dart';
 import 'package:tags/Models/user.dart';
 import 'package:tags/Utils/firebase_db.dart';
 import 'package:tags/Utils/image_picker.dart';
 
+const int CHAT_PAGE = 1;
 
 class SendMessageTile extends StatefulWidget {
   
   //TODO: passer une void call back a éxecuter quand ont appuie sur envoie
-  final bool _isComment;
-  final BlocTagsPage bloc;
-  final String tagOwnerId;
+  final PublicMark _mark;
+  final BlocTagsPage _bloc;
 
 
-  SendMessageTile(this._isComment,{this.bloc,this.tagOwnerId});
+  SendMessageTile(this._bloc,this._mark);
 
   _SendMessageTileState createState() => _SendMessageTileState();
 }
 
 class _SendMessageTileState extends State<SendMessageTile> {
-  static final int CHAT_PAGE = 1;
+  
   FocusNode _focusNode;
   TextEditingController _messageTextController;
   GlobalKey<FormFieldState> _key = GlobalKey<FormFieldState>();
@@ -41,20 +42,16 @@ class _SendMessageTileState extends State<SendMessageTile> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
-          !widget._isComment? ImagePickerUtils(_focusNode, widget.bloc) 
-          : Padding(
-            padding: EdgeInsets.symmetric(horizontal: 5.0),
-            child: CircleAvatar(
-            backgroundImage: AssetImage("lib/assets/selfie_dummy.jpg"),
-            ),
-          ),
+          currentUser.id!=widget._mark.creatorId && widget._mark.isPersonnal? 
+            Container()
+            :
+            ImagePickerUtils(_focusNode, widget._bloc,widget._mark.photoOnly),
           Expanded(
-            child: GestureDetector(
-              onTapCancel: (){
-                if(!widget._isComment) widget.bloc.numTabSink.add(CHAT_PAGE);
-              },
               child: TextFormField(
                 key: _key,
+                onTap: (){
+                  widget._bloc.numTabSink.add(CHAT_PAGE);
+                },
                 onSaved: (String val){
                   message=val;
                 },
@@ -62,23 +59,22 @@ class _SendMessageTileState extends State<SendMessageTile> {
                 focusNode: _focusNode,
                 decoration: InputDecoration(
                   filled: false,
-                  hintText: !widget._isComment? "message...": "ajouter un commentaire...",
+                  hintText: "message...",
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.all(10.0)), 
                 keyboardType: TextInputType.multiline,
                 maxLines: null,
-                cursorColor: Colors.deepOrange,
+                cursorColor: Colors.red,
               ),
-            )
           ),
           IconButton(
                 disabledColor: Colors.black12,
-                icon: Icon(Icons.send, color: _focusNode.hasFocus? Colors.deepOrange:Color.fromARGB(150,182, 182, 182)),
+                icon: Icon(Icons.send, color: _focusNode.hasFocus? Colors.red:Color.fromARGB(150,182, 182, 182)),
                 onPressed:
                 ()async {
                   _key.currentState.save();
                   if(message.trim().length!=0){
-                    TagsMessage messageTosend =TagsMessage(null, currentUser.id,_messageTextController.text,currentUser.userName,currentUser.photoUrl,widget.tagOwnerId,timeStamp());
+                    TagsMessage messageTosend =TagsMessage(null, currentUser.id,_messageTextController.text,currentUser.userName,currentUser.photoUrl,widget._mark.id,timeStamp());
                     _messageTextController.clear();
                     _sendTagMessages(messageTosend);
                   }
@@ -90,7 +86,7 @@ class _SendMessageTileState extends State<SendMessageTile> {
         color: Color.fromARGB(40,182, 182, 182),
         border: Border.all(
           width: 2.0,
-          color: _focusNode.hasFocus? Colors.deepOrange:Color.fromARGB(150,182, 182, 182),
+          color: _focusNode.hasFocus? Colors.red:Color.fromARGB(150,182, 182, 182),
           style: BorderStyle.solid
         ) ,
         borderRadius: const BorderRadius.all(Radius.circular(25.0)),

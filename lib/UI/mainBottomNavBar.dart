@@ -62,8 +62,8 @@ class BottomNavBarState extends State<BottomNavBar> {
           builder: (BuildContext context, AsyncSnapshot<int> snapshotNumTab){
             return  StreamBuilder<NotificationEvent>(
               stream: _mainBloc.newEventControllerStream,
-              initialData: NotificationEvent(_mainBloc.newFavContent, _mainBloc.newMessage, _mainBloc.newComment),
-              builder: (BuildContext context, AsyncSnapshot<NotificationEvent> snapshotNewMessage){
+              initialData: NotificationEvent(_mainBloc.newFavContent, _mainBloc.newMessage, _mainBloc.newUserPostEvent),
+              builder: (BuildContext context, AsyncSnapshot<NotificationEvent> snapshotNewEvent){
                   return CupertinoTabBar(
                     backgroundColor: Color(0xFFF8F8F8),
                     activeColor: Colors.red,
@@ -78,14 +78,14 @@ class BottomNavBarState extends State<BottomNavBar> {
                       ),title:Container()),
                       //BottomNavigationBarItem(icon: ),
                       BottomNavigationBarItem(icon: Padding(
-                        child: snapshotNewMessage.data.newFavContentEvent ?
+                        child: snapshotNewEvent.data.newFavContentEvent ?
                           _buildNewFavContentIcon(snapshotNumTab.data)
                           :
                           Icon(snapshotNumTab.data==2?Icons.favorite:Icons.favorite_border),
                         padding: EdgeInsets.only(left: 38.0),
                       ),title:Container()),
                       BottomNavigationBarItem(
-                        icon: snapshotNewMessage.data.newMessageEvent||snapshotNewMessage.data.newCommentEvent? 
+                        icon: snapshotNewEvent.data.newMessageEvent||snapshotNewEvent.data.newPostEvent? 
                           _buildNewMessageIcon(snapshotNumTab.data) 
                           : 
                           Icon(snapshotNumTab.data==3?Icons.person:Icons.person_outline),

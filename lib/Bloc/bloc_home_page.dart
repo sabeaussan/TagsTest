@@ -67,7 +67,6 @@ class BlocHomePage extends BlocBase{
 
   @override
   void dispose() {
-    // TODO: implement dispose
     _widgetPageController.close();
     _numTabController.close();
   }

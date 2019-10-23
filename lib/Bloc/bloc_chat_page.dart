@@ -10,9 +10,11 @@ class BlocChatPage implements BlocBase {
 
   final String _discussionId;
 
+  static const int NB_MESSAGES_FETCHED = 10;
+
   BlocChatPage(this._discussionId){
     _firestoreSub = Firestore.instance.collection("Discussions").document(_discussionId).collection("Message")
-    .limit(10).orderBy("id",descending: true).snapshots().listen(_onNewChatMessageSnapshot);
+    .limit(NB_MESSAGES_FETCHED).orderBy("timeStamp",descending: true).snapshots().listen(_onNewChatMessageSnapshot);
     _fetchMoreChatMessageSub =_fetchMoreChatMessageControllerStream.listen(_fetchMoreChatMessage);
 
 
@@ -23,12 +25,12 @@ class BlocChatPage implements BlocBase {
 
 
   
-  List<DocumentSnapshot> _snapshotChatMessageList=List<DocumentSnapshot>();
+  List<DocumentSnapshot> _chatMessageList=List<DocumentSnapshot>();
   DocumentSnapshot _lastChatMessageFetched;
   bool _chatMessageEdgeReached=false;
   bool _fetchingChatMessage=false;
 
-  List<DocumentSnapshot> get snapshotChatMessageList => _snapshotChatMessageList;
+  List<DocumentSnapshot> get chatMessageList => _chatMessageList;
   
 
   final StreamController<List<DocumentSnapshot>> _listChatMessageController = StreamController<List<DocumentSnapshot>>.broadcast();
@@ -57,11 +59,11 @@ class BlocChatPage implements BlocBase {
     _fetchingChatMessage=true;
     _loadingChatMessageControllerSink.add(_fetchingChatMessage);
     Firestore.instance.collection("Discussions").document(_discussionId).collection("Message")
-    .startAfter([_lastChatMessageFetched.documentID]).limit(10).orderBy("id",descending: true).getDocuments().then((snap){
+    .startAfterDocument(_lastChatMessageFetched).limit(NB_MESSAGES_FETCHED).orderBy("timeStamp",descending: true).getDocuments().then((snap){
         if(snap.documents.length>0) _lastChatMessageFetched=snap.documents[snap.documents.length-1];
-        if(snap.documents.length<10) _chatMessageEdgeReached=true;
-        _snapshotChatMessageList.addAll(snap.documents);
-        _listChatMessageControllerSink.add(_snapshotChatMessageList);
+        if(snap.documents.length<NB_MESSAGES_FETCHED) _chatMessageEdgeReached=true;
+        _chatMessageList.addAll(snap.documents);
+        _listChatMessageControllerSink.add(_chatMessageList);
         _fetchingChatMessage=false;
         _loadingChatMessageControllerSink.add(_fetchingChatMessage);
       });
@@ -70,25 +72,27 @@ class BlocChatPage implements BlocBase {
 
 
   void _onNewChatMessageSnapshot(QuerySnapshot snapshot){
-    if(_snapshotChatMessageList.length!=0){
+    if(_chatMessageList.length!=0){
       snapshot.documentChanges.forEach((DocumentChange doc){
         /*final int t1=int.parse(doc.document.data["timeStamp"]);
         final int t2=int.parse(_snapshotChatMessageList.elementAt(0).data["timeStamp"]);*/
         final String id1 = doc.document.documentID;
-        final String id2 = _snapshotChatMessageList.elementAt(0).documentID;
+        final String id2 = _chatMessageList.elementAt(0).documentID;
         print("new doc : "+doc.document.data["content"]+id1);
-        print("lastDoc : "+_snapshotChatMessageList.elementAt(0).data["content"]+id2);
+        print("lastDoc : "+_chatMessageList.elementAt(0).data["content"]+id2);
         if(doc.type==DocumentChangeType.added &&  /*t1 >= t2 &&*/ id1!=id2 ){
             print("added!!!!!!!");
-            _snapshotChatMessageList.insert(0,doc.document);
+            _chatMessageList.insert(0,doc.document);
         }
       });
     }
-    if(_snapshotChatMessageList.length==0) {
-      _snapshotChatMessageList.addAll(snapshot.documents);
+    if(_chatMessageList.length==0 && snapshot.documents.length!=0) {
+      _chatMessageList.addAll(snapshot.documents);
+      print("first doc added!!!!!!!");
       _lastChatMessageFetched=snapshot.documents[snapshot.documents.length-1];
+      if(snapshot.documents.length < NB_MESSAGES_FETCHED) _chatMessageEdgeReached=true;
     }
-    _listChatMessageControllerSink.add(_snapshotChatMessageList);
+    _listChatMessageControllerSink.add(_chatMessageList);
   }
 
   @override

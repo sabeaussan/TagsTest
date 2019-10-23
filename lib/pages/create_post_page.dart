@@ -2,22 +2,23 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
+import 'package:tags/Bloc/bloc_tags_page.dart';
 import 'package:tags/Bloc/main_bloc.dart';
 import 'package:tags/Models/post.dart';
 import 'dart:ui' as ui;
 import 'dart:io';
 
-import 'package:tags/Models/tags.dart';
 import 'package:tags/Models/user.dart';
+import 'package:tags/UI/loading_overlay.dart';
 import 'package:tags/Utils/firebase_db.dart';
 
 
 class CreatePostPage extends StatefulWidget {
   final File _imageFile;
-  final Tags _tags;
+  final BlocTagsPage _blocTagsPage;
   
 
-  CreatePostPage(this._imageFile,this._tags);
+  CreatePostPage(this._imageFile,this._blocTagsPage);
 
   @override
   CreatePostPageState createState() {
@@ -30,6 +31,7 @@ class CreatePostPageState extends State<CreatePostPage> {
   int _imageWidth;
   int _imageHeight;
   FocusNode _focusNode;
+
 
   Future<ui.Image> _getImage() {
     Completer<ui.Image> completer = new Completer<ui.Image>();
@@ -44,17 +46,7 @@ class CreatePostPageState extends State<CreatePostPage> {
 
   TextEditingController _postDescriptionController;
 
-  Widget _displayOverlayLoading(){
-
-    return Material(
-      color: Colors.black54,
-      child: InkWell(
-        child: Center(
-          child: CircularProgressIndicator(strokeWidth: 5.0,),
-        ),
-      )
-    );
-  }
+  
 
   Widget _buildImageContainer(){
     return FutureBuilder(
@@ -92,8 +84,9 @@ class CreatePostPageState extends State<CreatePostPage> {
         _isLoading=true;
         _focusNode.unfocus(); 
       });
-      final Post newPost = Post(null, currentUser, _postDescriptionController.text, null, 0, widget._tags, 0,_imageHeight,_imageWidth ,timeStamp());
-      await db.createPostFirestore(newPost,widget._imageFile).then((_){
+      final Post newPost = Post(currentUser, _postDescriptionController.text, widget._blocTagsPage.mark, _imageHeight,_imageWidth ,timeStamp());
+      await db.createPostFirestore(newPost,widget._imageFile).then((Post post){
+        widget._blocTagsPage.newPostsControllerSink.add(newPost);
         _isLoading=false;
       });
       Navigator.of(context).pop();
@@ -112,13 +105,13 @@ class CreatePostPageState extends State<CreatePostPage> {
           focusedBorder: UnderlineInputBorder(
           borderSide: BorderSide(
             width: 3.0,
-            color: Colors.deepOrange
+            color: Colors.red
             )
           ),
           hintStyle: TextStyle(color: Colors.black12),
           hintText: "Ajoute une description"
           ),
-          cursorColor: Colors.deepOrange,
+          cursorColor: Colors.red,
           maxLines: null,
           keyboardType: TextInputType.multiline,
         ),
@@ -177,7 +170,7 @@ class CreatePostPageState extends State<CreatePostPage> {
             )
           )
         ),
-        _isLoading?_displayOverlayLoading():Container(),
+        _isLoading?LoadingOverlay():Container(),
       ],
     );
   }

@@ -21,7 +21,6 @@ class BlocMapPage extends BlocBase {
 
   @override
   void dispose() {
-    // TODO: implement dispose
     _opacityCircleMarkerController.close();
   }
   

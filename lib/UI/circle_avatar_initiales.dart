@@ -17,7 +17,7 @@ class CircleAvatarInitiales extends StatelessWidget {
   Widget build(BuildContext context) {
     return CircleAvatar(
       radius: MediaQuery.of(context).size.width*0.16,
-      backgroundColor: Colors.deepOrange[300],
+      backgroundColor: Colors.red[300],
       child: Text(getInitiales(),style: TextStyle(fontSize: 48.0,color: Colors.white),),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
@@ -10,21 +11,15 @@ import 'package:tags/pages/other_user_post_grid.dart';
 
 
 
-class OtherUserProfilePage extends StatefulWidget {
-  _OtherUserProfilePageState createState() => _OtherUserProfilePageState();
+class OtherUserProfilePage extends StatelessWidget {
 
   final User _user;
 
   OtherUserProfilePage(this._user);
 
-}
 
-class _OtherUserProfilePageState extends State<OtherUserProfilePage> {
-
-
-
-  Widget _buildTabs(){
-    return OtherUserPostGrid(widget._user);
+  Widget _buildTabs(List<DocumentSnapshot> userPosts){
+    return OtherUserPostGrid(userPosts);
   }
 
 
@@ -44,7 +39,7 @@ class _OtherUserProfilePageState extends State<OtherUserProfilePage> {
 
   }
 
-  Widget _buildUserProfileColumn(BuildContext context){
+  Widget _buildUserProfileColumn(BuildContext context,int nbPosts){
      const IconData chat = const IconData(0xf38d,
           fontFamily: CupertinoIcons.iconFont,
           fontPackage: CupertinoIcons.iconFontPackage); 
@@ -72,13 +67,13 @@ class _OtherUserProfilePageState extends State<OtherUserProfilePage> {
               ),
               Expanded(
                 flex: 1,
-                child: widget._user.photoUrl!=null ? 
+                child: _user.photoUrl!=null ? 
                 CircleAvatar(
                   radius: MediaQuery.of(context).size.width*0.16,
-                  backgroundImage:  CachedNetworkImageProvider(widget._user.photoUrl),
+                  backgroundImage:  CachedNetworkImageProvider(_user.photoUrl),
                 )
                 :
-                CircleAvatarInitiales(widget._user),
+                CircleAvatarInitiales(_user),
               ),
             
             SizedBox(
@@ -98,22 +93,53 @@ class _OtherUserProfilePageState extends State<OtherUserProfilePage> {
                           children: <Widget>[
                           Flexible(
                             flex: 4,
-                            child: Text(widget._user.userName,style: TextStyle(fontSize: 25.0,fontWeight: FontWeight.bold,color: Colors.white),),
+                            child: Text(_user.userName,style: TextStyle(fontSize: 25.0,fontWeight: FontWeight.bold,color: Colors.white),),
                            ),
                           Flexible(
                             fit: FlexFit.loose,
                             flex: 0,
-                            child: currentUser.id!=widget._user.id?
+                            child: currentUser.id!=_user.id?
                               IconButton(
                                 icon: Icon(chat,color: Colors.white,),
                                 onPressed: (){
-                                  _navigateChatPage(context,currentUser,widget._user);
+                                  _navigateChatPage(context,currentUser,_user);
                                 },
                               )
                               :Container(),
                          ),
                         ],),
-                        Text(widget._user.nom + " "+widget._user.prenom,style: TextStyle(color: Colors.white),),
+                        Text(_user.nom + " "+_user.prenom,style: TextStyle(color: Colors.white),),
+                        SizedBox(
+            height: 15.0,
+          ),
+          Row(
+            children: <Widget>[
+              SizedBox(
+                width: 20.0,
+              ),
+              Column(
+                children: <Widget>[
+                  Text(nbPosts.toString(),style: TextStyle(fontSize: 18.0,fontWeight: FontWeight.w500,color: Colors.white),),
+                  Text("Posts",style: TextStyle(fontSize: 18.0,fontWeight: FontWeight.w500,color: Colors.white),)
+                ],
+              ),
+              SizedBox(
+                width: 20.0,
+              ),
+              Column(
+                children: <Widget>[
+                  Text(currentUser.nbMarks.toString(),style: TextStyle(fontSize: 18.0,fontWeight: FontWeight.w500,color: Colors.white),),
+                  Text("Marks",style: TextStyle(fontSize: 18.0,fontWeight: FontWeight.w500,color: Colors.white),)
+                ],
+              ),
+              /*SizedBox(
+                width: 9.0,
+              ),
+              IconButton(
+                icon: Icon(Icons.edit,color: Colors.white,),
+              )*/
+            ],
+          )
                       ],
                     ),
               ),  
@@ -122,7 +148,7 @@ class _OtherUserProfilePageState extends State<OtherUserProfilePage> {
             ),
           ],
         ),
-    ),
+      ),
     );
   }
  
@@ -130,25 +156,36 @@ class _OtherUserProfilePageState extends State<OtherUserProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-          children: <Widget>[
-            _buildUserProfileColumn(context),
-            SizedBox(
-              height: 10.0,
-            ),
-            Container(
-              child: Text(widget._user.bio),
-              margin: EdgeInsets.all(10.0),
-            ),
-            SizedBox(
-              height: 20.0,
-            ),
-            Expanded(
-              flex: 3,
-              child: _buildTabs(),
-            )
-          ],
-        )
+      body: FutureBuilder<QuerySnapshot>(
+        future: Firestore.instance.collection("User").document(_user.id).collection("UserPost").getDocuments(),
+        builder: (context, userPostSnapshot) {
+          if(userPostSnapshot.data==null){
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+          final int nbPosts = userPostSnapshot.data.documents.length;
+          return Column(
+              children: <Widget>[
+                _buildUserProfileColumn(context,nbPosts),
+                SizedBox(
+                  height: 10.0,
+                ),
+                Container(
+                  child: Text(_user.bio),
+                  margin: EdgeInsets.all(10.0),
+                ),
+                SizedBox(
+                  height: 20.0,
+                ),
+                Expanded(
+                  flex: 3,
+                  child: _buildTabs(userPostSnapshot.data.documents),
+                )
+              ],
+            );
+        }
+      )
     );
   }
 }

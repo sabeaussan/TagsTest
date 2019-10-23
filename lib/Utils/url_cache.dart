@@ -1,5 +1,6 @@
 
 import 'package:tags/Utils/firebase_db.dart';
+import 'dart:async';
 
 class UrlCache {
 
@@ -7,15 +8,15 @@ class UrlCache {
 
   static void _storeUrl(String uid,String url){
     final Map<String,String> _storageItem = {uid : url};
-    print("_storeUrl : "+_storageItem.toString());
+    // print("_storeUrl : "+_storageItem.toString());
     _urlStorage.add(_storageItem);
-    print("_urlStorage :"+_urlStorage.toString());
+    // print("_urlStorage :"+_urlStorage.toString());
   }
 
   static Map<String,String> _isCached(String uid){
     Map<String,String> cachedItem;
     _urlStorage.forEach((storedItem){
-      print("_isCached : "+storedItem.keys.single);
+      // print("_isCached : "+storedItem.keys.single);
       if(storedItem.containsKey(uid)) cachedItem=storedItem;
     });
     return cachedItem;
@@ -24,12 +25,12 @@ class UrlCache {
 
   static Future<String> getUrl(String uid) async {
     Map <String,String> cachedItem = _isCached(uid);
-    print("get Url : "+cachedItem.toString());
-    print("_urlStorageBefore :"+_urlStorage.toString());
+    // print("get Url : "+cachedItem.toString());
+    // print("_urlStorageBefore :"+_urlStorage.toString());
     if(cachedItem!=null) return cachedItem.values.single;
     else {
       //TODO : gérer les cas ou l'url est nulle pour éviter des appels serveurs inutile
-      print("fetching url");
+      // print("fetching url");
       String url = await db.getUserPhototUrl(uid);
       cachedItem={uid : url};
       if(url!=null && !_urlStorage.contains(cachedItem)) _storeUrl(uid, url);

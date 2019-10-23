@@ -67,7 +67,7 @@ class _DiscussionTileState extends State<DiscussionTile> {
       child: ListTile(
         trailing: widget._lastMessageSeen? Container(width: 0.0,height: 0.0,)
         :CircleAvatar(
-            child: Center(child: Icon(Icons.error,size: 20.0,color:Colors.deepOrange),),
+            child: Center(child: Icon(Icons.error,size: 20.0,color:Colors.red),),
             backgroundColor: Color(0xFFF8F8F8),
             radius: 10.0,
           ),

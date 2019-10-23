@@ -3,14 +3,19 @@ import 'package:tags/Models/post.dart';
 
 
 class UserPost {
-  String _creatorId;    //TODO: faire comme ca pour le reste aussi
+  
+  String _creatorId;
   String _tagOwnerId;
   String _id;
   String _imageUrl;
   String _timeStamp;
-  bool _lastCommentSeen;
   int _imageWidth;
   int _imageHeight;
+  bool _lastCommentSeen=true;
+  bool _lastLikeSeen=true;
+  //String _lastComment;
+  //String _lastCommentUserName;
+  //String _lastLikerUserName;
 
 
   UserPost(
@@ -18,7 +23,6 @@ class UserPost {
     this._creatorId,
     this._imageUrl,
     this._tagOwnerId,
-    this._lastCommentSeen,
     this._timeStamp,
     this._imageHeight,
     this._imageWidth
@@ -29,7 +33,6 @@ class UserPost {
     _tagOwnerId = post.tagOwner.id,
     _imageUrl = post.imageUrl,
     _creatorId = post.creator.id,
-    _lastCommentSeen = true,
     _imageHeight=post.imageHeight,
     _imageWidth=post.imageWidth,
     _timeStamp = post.timeStamp;      //pose problème
@@ -44,6 +47,10 @@ class UserPost {
     _creatorId = snapshot.data["ownerId"],
     _tagOwnerId = snapshot.data["tagsId"],
     _lastCommentSeen = snapshot.data["lastCommentSeen"],
+    _lastLikeSeen = snapshot.data["lastLikeSeen"],
+    //_lastComment = snapshot.data["lastComment"],
+    //_lastCommentUserName = snapshot.data["lastCommentUserName"],
+    //_lastLikerUserName = snapshot.data["lastLikerUserName"],
     _timeStamp = snapshot.data["timeStamp"];
 
 
@@ -53,7 +60,8 @@ class UserPost {
       "tagsId" : this._tagOwnerId,
       "imageUrl" : this._imageUrl,
       "ownerId"   : this._creatorId,
-      "lastCommentSeen" : this._lastCommentSeen,
+      "lastLikeSeen" : true,
+      "lastCommentSeen" : true,
       "imageHeight" : this._imageHeight,
       "imageWidth" : this._imageWidth,
       "timeStamp"   : this._timeStamp
@@ -67,6 +75,7 @@ class UserPost {
   String get timeStamp => _timeStamp;
   int get imageWidth =>_imageWidth;
   int get imageHeight =>_imageHeight;
+  bool get lastLikeSeen => _lastLikeSeen;
   bool get lastCommentSeen => _lastCommentSeen;
 
   void setId(String postId){

@@ -3,8 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Bloc/main_bloc.dart';
-import 'package:tags/Models/user.dart';
 import 'package:tags/Models/userPost.dart';
+import 'package:tags/UI/notif_icon.dart';
 
 import 'package:tags/UI/post_tile.dart';
 import 'package:tags/pages/comments_page.dart';
@@ -14,38 +14,49 @@ class PostGrid extends StatelessWidget {
 
   //TODO: faire un futureBuilder ou stbld
 
-  final User _user;
 
-  PostGrid(this._user);
+
+  PostGrid();
 
   void _navigateCommentsPage(BuildContext context,UserPost userPost) async {
     DocumentSnapshot postSnap = await Firestore.instance.collection("Tags").document(userPost.tagOwnerId).collection("TagsPost").document(userPost.id).get();
+    print(" ######## DEBUG _navigateCommentsPage ########");
+    print(postSnap.documentID);
+    print(postSnap.data["userName"]);
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (BuildContext context)  {
-          PostTile postFromTagsPost =  PostTile.fromDocumentSnaptshot(postSnap); 
-          return CommentsPage(postFromTagsPost);
+          PostTile postFromTagsPost =  PostTile.fromDocumentSnaptshot(postSnap,lastLikeSeen: userPost.lastLikeSeen); 
+          return CommentsPage(postFromTagsPost,userPost: userPost,);
         }
       )
     );
   }
 
-  Widget _buildNewCommentImage(UserPost postTileItems){
+  Widget _buildNewCommentImage(UserPost userPostItems){
     return Stack(
         children: <Widget>[
-          Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image:CachedNetworkImageProvider(postTileItems.imageUrl),
-                    fit: BoxFit.fitWidth,
-                    alignment: FractionalOffset.center,
-                  )
+          Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15.0)
                 ),
+                margin: EdgeInsets.symmetric(horizontal : 1.5,vertical: 5.0),
+                child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                  shape: BoxShape.rectangle,
+                  image: DecorationImage(
+                    image:CachedNetworkImageProvider(userPostItems.imageUrl),
+                      fit: userPostItems.imageWidth/userPostItems.imageHeight>=1.0 ? BoxFit.fitHeight:BoxFit.fitWidth,
+                      alignment: FractionalOffset.center,
+                ),
+              )
+              )
               ),
-          CircleAvatar(
-            child: Center(child: Icon(Icons.error,size: 25.0,color:Colors.deepOrange),),
-            backgroundColor: Color(0xFFF8F8F8),
-            radius: 12.5,
+          Positioned(
+            child: NotifIcon(22.0,11.0),
+            top: 10.0,
+            right: 10.0,
           )
         ],
     );
@@ -56,15 +67,15 @@ class PostGrid extends StatelessWidget {
 
     List<Widget> _buildUserPostGrid(BuildContext context, QuerySnapshot snapshot) {
     final List<Widget> gridItems =snapshot.documents.map((DocumentSnapshot document){
-      final UserPost userPostTileItems =  UserPost.fromDocumentSnaptshot(document);  
+      final UserPost userPostItems =  UserPost.fromDocumentSnaptshot(document);  
       return GestureDetector(
           onTap: (){
-            _navigateCommentsPage(context,userPostTileItems);
+            _navigateCommentsPage(context,userPostItems);
           },
           child: GridTile(
            child: AspectRatio(
             aspectRatio: 1.0,
-            child: userPostTileItems.lastCommentSeen?
+            child: userPostItems.lastCommentSeen && userPostItems.lastLikeSeen?
               Card(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15.0)
@@ -75,15 +86,15 @@ class PostGrid extends StatelessWidget {
                   borderRadius: BorderRadius.all(Radius.circular(10.0)),
                   shape: BoxShape.rectangle,
                   image: DecorationImage(
-                    image:CachedNetworkImageProvider(userPostTileItems.imageUrl),
-                      fit: userPostTileItems.imageWidth/userPostTileItems.imageHeight>=1.0 ? BoxFit.fitHeight:BoxFit.fitWidth,
+                    image:CachedNetworkImageProvider(userPostItems.imageUrl),
+                      fit: userPostItems.imageWidth/userPostItems.imageHeight>=1.0 ? BoxFit.fitHeight:BoxFit.fitWidth,
                       alignment: FractionalOffset.center,
                 ),
               )
               )
               )
               :
-              _buildNewCommentImage(userPostTileItems)
+              _buildNewCommentImage(userPostItems),
             ),
           ),
         );
@@ -99,16 +110,17 @@ class PostGrid extends StatelessWidget {
        stream: _mainBloc.listUserPostControllerStream,
        initialData: _mainBloc.userPostSnapshot,
        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot){
+         print(" ################### STB USERPOST TRIGGERED ################# ");
         if(!snapshot.hasData){
           return Center(
             child: CircularProgressIndicator(),
           );
         }
         if (snapshot.data.documents.length==0) {
-            return Center(
-              child: Text("Aucun post"),
-            );
-          }
+          return Center(
+            child: Text("Aucun post"),
+          );
+        }
         return GridView.count(
           crossAxisCount: 3,
           childAspectRatio: 1.0,

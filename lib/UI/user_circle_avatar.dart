@@ -11,14 +11,14 @@ import 'package:tags/pages/other_user_profile_page.dart';
 
 
 class UserCircleAvatar extends StatefulWidget {
+  
   //TODO : utiliser un cache pour sauvegarder une liste de Map<uid;url>
   //pour ne pas avoir à refetch à chaque fois l'url
   final String _userName;
   final String _uid;
-  String _imageUrl;
   
 
-  UserCircleAvatar(this._userName,this._uid,/*{Key key}*/)/*:super(key:key)*/;
+  UserCircleAvatar(this._userName,this._uid,{Key key}):super(key:key);
 
   @override
   _UserCircleAvatarState createState() => _UserCircleAvatarState();
@@ -78,7 +78,7 @@ class _UserCircleAvatarState extends State<UserCircleAvatar> {
             )
             :
             CircleAvatar(
-              backgroundColor: Colors.deepOrange[300],
+              backgroundColor: Colors.red[300],
               child: 
                 Text(getInitiales(),style: TextStyle(fontSize: 25.0,color: Colors.white),),
               
@@ -91,4 +91,7 @@ class _UserCircleAvatarState extends State<UserCircleAvatar> {
       },
     );
   }
+
+
+  
 }

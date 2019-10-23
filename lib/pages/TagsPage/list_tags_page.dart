@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Bloc/main_bloc.dart';
-import 'package:tags/Models/tags.dart';
+import 'package:tags/Models/publicmark.dart';
 import 'package:tags/UI/tags_tile.dart';
 
 
@@ -16,8 +16,6 @@ class ListTagsPage extends StatefulWidget {
 
 class _ListTagsPageState extends State<ListTagsPage> {
   MainBloc _mainBloc;
-  bool _onRange=false; 
-  String _distanceLabel;
 
   @override
   void initState() {
@@ -25,43 +23,38 @@ class _ListTagsPageState extends State<ListTagsPage> {
     super.initState();
     _mainBloc = BlocProvider.of<MainBloc>(context);
   }
-
-
-  String setDistanceLabelAndOnRange(Tags tag){
-    int dist = tag.distance.toInt();
-    if(dist<=0) _onRange=true;
-    int r = dist%10;
-    dist = dist - r;
-    return dist.toString();
-  }
-
-
+  
   @override
   Widget build(BuildContext context) {
 
-    return StreamBuilder<List<Tags>>(
-      stream: _mainBloc.listTagsPageControllerStream,
-      initialData: _mainBloc.filteredSnapshotTagsList,
-      builder: (BuildContext context, AsyncSnapshot<List<Tags>> listSnapshot){
+    return FutureBuilder<List<PublicMark>>(
+      future: _mainBloc.filterMarksForListMarkPage(),
+      builder: (BuildContext context, AsyncSnapshot<List<PublicMark>> listSnapshot){
         if(!listSnapshot.hasData){
           return Center(
             child: CircularProgressIndicator(),
             );
           }
           if(listSnapshot.data.length==0){    //Il n'y pas de tags à récupérer
-          return Center(
-            child: Text("Aucun tags à proximité"),
+            return Center(
+              child: Text("Aucun tags à proximité"),
             );
           }
-          
-            return ListView.builder(
+            return RefreshIndicator(
+              onRefresh: () async {
+                setState(() {
+                  
+                });
+                return;
+              },
+              child: ListView.builder(
               itemCount: listSnapshot.data.length ,
               physics: const AlwaysScrollableScrollPhysics(),
               itemBuilder: (BuildContext context, int index){
-                _distanceLabel=setDistanceLabelAndOnRange(listSnapshot.data[index]);
-                return TagsTile(listSnapshot.data[index], _distanceLabel, false);
+                return TagsTile(listSnapshot.data[index]);
               }
-            );
+            ),
+          );
       },
     );
   }

@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:tags/Utils/firebase_db.dart';
+
 
 
 
@@ -19,18 +23,18 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading=false;
   GlobalKey<FormState> _formKey =GlobalKey<FormState>();
 
-
   Widget _buildTitle() {
     return Text("Tags",
         style: TextStyle(
-            color: Colors.deepOrange,
+            color: Colors.red,
             fontSize: 40.0,
             fontFamily: "InkFree",
             fontWeight: FontWeight.w900));
   }
 
+  
+
   void _onLogButtonPressed(BuildContext context)  {
-    //TODO: faire une boite dialogue pour gérer les différentes erreurs
     //TODO: récupérer le currentUser depuis le type de retour de signInUser et createUser
     if(_formKey.currentState.validate()){
           setState(() {
@@ -39,22 +43,23 @@ class _LoginPageState extends State<LoginPage> {
       _formKey.currentState.save();
       if(_logIn){
         db.signInUser(_email, _passWord).then((FirebaseUser fbUser){
-          if(fbUser!=null) print("utilisateur authentifié");
+          if(fbUser!=null) print("utilisateur authentifié");     
+        }).catchError((e) async{
           setState(() {
             _isLoading=false; 
-          });        
-        }).catchError((e) async{
-          await _onLogError(e.toString(),context);
+          });  
+          await _onLogErrorSignIn(e,context);
         });
+         
       }
       else{
         db.createUser(_email, _passWord, _nom, _prenom, _nomUtilisateur).then((FirebaseUser fbUser){
            if(fbUser!=null)  print("utlisateur créé");
-           setState(() {
-              _isLoading=false; 
-            }); 
         }).catchError((e) async{
-          await _onLogError(e.toString(),context);
+          setState(() {
+            _isLoading=false; 
+          });  
+          await _onLogErrorCreateUser(e.toString(),context);
         });
       }
       
@@ -62,7 +67,48 @@ class _LoginPageState extends State<LoginPage> {
 
   }
 
-  Future<void> _onLogError(String error,BuildContext context){
+  Future<void> _onLogErrorSignIn(dynamic e,BuildContext context){
+    final PlatformException error=e;
+    Text errorText;
+    print("############ DEBUG ERROR SIGNIN ##########");
+    print(error.message);
+    switch(error.code){
+      case "ERROR_INVALID_EMAIL":
+        errorText=Text("L'email que vous avez rentré est invalide");
+        break;
+      case "ERROR_WRONG_PASSWORD":
+        errorText=Text("Il semblerait que votre mot de passe soit erroné");
+        break;
+      case "ERROR_USER_NOT_FOUND":
+        errorText=Text("Utilisateur inconnu, inscrivez-vous si ce n'est pas encore fait :)");
+        break;
+      case "ERROR_TOO_MANY_REQUESTS":
+        errorText=Text("Trop d'utilisateur se connectent en même temps, réessayer dans quelques secondes :)");
+        break;
+      default:
+        errorText=Text("Problème d'authentification...");
+        break;
+    }
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context){
+        return AlertDialog(
+          content: errorText,
+          actions: <Widget>[
+            FlatButton(
+              child: Text("ok"),
+              onPressed: (){
+                Navigator.of(context).pop();
+              },
+            )
+          ],
+        );
+      }
+    );
+  }
+
+  Future<void> _onLogErrorCreateUser(String error,BuildContext context){
     Text errorText =Text(error);
     return showDialog(
       context: context,
@@ -92,7 +138,7 @@ class _LoginPageState extends State<LoginPage> {
           "Deja inscrit ? "),
         FlatButton(
           color: Colors.transparent,
-          textColor: Colors.deepOrange[300],
+          textColor: Colors.red[300],
           child: Text( _logIn?
           "Inscris toi !" :
             "connecte toi !" 
@@ -140,7 +186,7 @@ class _LoginPageState extends State<LoginPage> {
               Container()
           ],
         ),
-        color: Colors.deepOrange,
+        color: Colors.red,
         onPressed: () {
           _onLogButtonPressed(context);
         });
@@ -185,9 +231,9 @@ class _LoginPageState extends State<LoginPage> {
           style: TextStyle(fontSize: 15.0, color: Colors.black),
           decoration: InputDecoration(
             focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.deepOrange)),
+                borderSide: BorderSide(color: Colors.red)),
             border: OutlineInputBorder(),
-            labelStyle: TextStyle(color: Colors.deepOrange[200]),
+            labelStyle: TextStyle(color: Colors.red[200]),
             labelText: hint,
           ),
           maxLines: 1,
@@ -212,9 +258,9 @@ class _LoginPageState extends State<LoginPage> {
           style: TextStyle(fontSize: 15.0, color: Colors.black),
           decoration: InputDecoration(
             focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.deepOrange)),
+                borderSide: BorderSide(color: Colors.red)),
             border: OutlineInputBorder(),
-            labelStyle: TextStyle(color: Colors.deepOrange[200]),
+            labelStyle: TextStyle(color: Colors.red[200]),
             labelText: hint,
           ),
           maxLines: 1,
@@ -240,9 +286,9 @@ class _LoginPageState extends State<LoginPage> {
           style: TextStyle(fontSize: 15.0, color: Colors.black),
           decoration: InputDecoration(
             focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.deepOrange)),
+                borderSide: BorderSide(color: Colors.red)),
             border: OutlineInputBorder(),
-            labelStyle: TextStyle(color: Colors.deepOrange[200]),
+            labelStyle: TextStyle(color: Colors.red[200]),
             labelText: hint,
           ),
           maxLines: 1,
@@ -267,9 +313,9 @@ class _LoginPageState extends State<LoginPage> {
           style: TextStyle(fontSize: 15.0, color: Colors.black),
           decoration: InputDecoration(
             focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.deepOrange)),
+                borderSide: BorderSide(color: Colors.red)),
             border: OutlineInputBorder(),
-            labelStyle: TextStyle(color: Colors.deepOrange[200]),
+            labelStyle: TextStyle(color: Colors.red[200]),
             labelText: hint,
           ),
           maxLines: 1,
@@ -294,9 +340,9 @@ class _LoginPageState extends State<LoginPage> {
           style: TextStyle(fontSize: 15.0, color: Colors.black),
           decoration: InputDecoration(
             focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.deepOrange)),
+                borderSide: BorderSide(color: Colors.red)),
             border: OutlineInputBorder(),
-            labelStyle: TextStyle(color: Colors.deepOrange[200]),
+            labelStyle: TextStyle(color: Colors.red[200]),
             labelText: hint,
           ),
           maxLines: 1,

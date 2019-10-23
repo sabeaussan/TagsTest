@@ -25,7 +25,7 @@ class _TagsBottomNavBarState extends State<TagsBottomNavBar> {
           builder: (BuildContext context, AsyncSnapshot<int> snapshot){
             return  CupertinoTabBar(
               iconSize: 35.0,
-              activeColor: Colors.deepOrange,
+              activeColor: Colors.red,
               currentIndex: snapshot.data ,
               items: <BottomNavigationBarItem>[
                 BottomNavigationBarItem(icon: Icon(Icons.mms,), title: Container()),

@@ -1,10 +1,9 @@
-import 'package:tags/Models/tags.dart';
+import 'package:tags/Models/publicmark.dart';
 import 'package:tags/Models/user.dart';
-import 'package:tags/UI/post_tile.dart';
 
 class Post {
   User _creator;    //TODO: faire comme ca pour le reste aussi
-  Tags _tagOwner;
+  PublicMark _tagOwner;
   String _id;
   String _imageUrl;
   String _description;
@@ -13,16 +12,14 @@ class Post {
   int _nbLikes;
   int _imageWidth;
   int _imageHeight;
-
+  List<dynamic> _likers;
+  int _nbLikesNotSeen;
+  int _nbCommentsNotSeen;
 
   Post(
-    this._id,
     this._creator,
     this._description,
-    this._imageUrl,
-    this._nbLikes,
     this._tagOwner,
-    this._nbComments,
     this._imageHeight,
     this._imageWidth,
     this._timeStamp
@@ -42,15 +39,18 @@ class Post {
       "userName"  : this._creator.userName,
       "ownerId"   : this._creator.id,
       "userPhotoUrl"   : this._creator.photoUrl,
-      "nbLikes"       : this._nbLikes,
-      "nbComments"   : this._nbComments,
+      "nbLikes"       : 0,
+      "nbComments"   : 0,
       "imageWidth"  : this._imageWidth,
-      "imageHeight"   : this._imageHeight
+      "imageHeight"   : this._imageHeight,
+      "likers" : [],
+      "nbCommentsNotSeen" : 0,
+      "nbLikesNotSeen" : 0
     };
   }
 
   User get creator => _creator;
-  Tags get tagOwner => _tagOwner;
+  PublicMark get tagOwner => _tagOwner;
   String get id =>_id;
   String get imageUrl => _imageUrl;
   String get description => _description;
@@ -59,6 +59,9 @@ class Post {
   int get nbLikes =>_nbLikes;
   int get imageWidth =>_imageWidth;
   int get imageHeight =>_imageHeight;
+  List<dynamic> get likers => _likers;
+  int get nbCommentsNotSeen => _nbCommentsNotSeen;
+  int get nbLikesNotSeen => _nbLikesNotSeen;
 
   void setId(String postId){
     this._id = postId;

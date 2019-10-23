@@ -48,12 +48,35 @@ class NotificationEvent extends Event{
 
   final bool _newFavContentEvent;
   final bool _newMessageEvent;
-  final bool _newCommentEvent;
+  final bool _newPostEvent;
+
 
   bool get newFavContentEvent => _newFavContentEvent;
   bool get newMessageEvent => _newMessageEvent;
-  bool get newCommentEvent => _newCommentEvent;
+  bool get newPostEvent => _newPostEvent;
 
-  NotificationEvent(this._newFavContentEvent,this._newMessageEvent,this._newCommentEvent);
 
+  NotificationEvent(this._newFavContentEvent,this._newMessageEvent,this._newPostEvent);
+
+}
+
+class ResumeAppEvent extends Event{
+
+}
+
+class NewFavContentSeen extends Event {
+  
+}
+
+class FilterMarkSnapshotsEvent extends Event {
+  bool forMapPage;
+  bool forListMarkPage;
+  bool forPopularPage;
+  
+  FilterMarkSnapshotsEvent({this.forMapPage,this.forListMarkPage,this.forPopularPage});
+
+}
+
+class RefreshEvent extends Event{
+  
 }

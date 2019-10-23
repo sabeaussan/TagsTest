@@ -1,11 +1,12 @@
 import 'dart:io';
-
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Bloc/main_bloc.dart';
 import 'package:tags/Models/user.dart';
 import 'package:tags/UI/circle_avatar_initiales.dart';
+import 'package:tags/UI/loading_overlay.dart';
 import 'package:tags/Utils/firebase_db.dart';
 
 
@@ -20,12 +21,13 @@ class ModifProfilePage extends StatefulWidget {
 }
 
 class _ModifProfilePageState extends State<ModifProfilePage> {
-
+  bool _isLoading=false;
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   String _prenom;
   String _nom;
   String _nomUtilisateur;
   String _bio;
+  File _tempUserImage;
 
 //TODO: dispose les controller
   TextEditingController _nomController;
@@ -62,7 +64,7 @@ class _ModifProfilePageState extends State<ModifProfilePage> {
           decoration: InputDecoration(
             labelText: "userName",
             focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.deepOrange)),
+                borderSide: BorderSide(color: Colors.red)),
             border: UnderlineInputBorder(),
           ),
           maxLines: 1,
@@ -90,7 +92,7 @@ class _ModifProfilePageState extends State<ModifProfilePage> {
           decoration: InputDecoration(
             labelText: "prenom",
             focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.deepOrange)),
+                borderSide: BorderSide(color: Colors.red)),
             border: UnderlineInputBorder(),
           ),
           maxLines: 1,
@@ -120,7 +122,7 @@ class _ModifProfilePageState extends State<ModifProfilePage> {
           decoration: InputDecoration(
             labelText: "nom",
             focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.deepOrange)),
+                borderSide: BorderSide(color: Colors.red)),
             border: UnderlineInputBorder(),
           ),
           maxLines: 1,
@@ -149,11 +151,15 @@ class _ModifProfilePageState extends State<ModifProfilePage> {
     );
   }
 
-  void _onConfirmRaisedButtonPressed(BuildContext context) {
+  void _onConfirmRaisedButtonPressed(BuildContext context) async {
     if(_formKey.currentState.validate()){
       _formKey.currentState.save();
       //print(_nomUtilisateur);
+      setState(() {
+        _isLoading=true;
+      });
       db.updateUser(widget._oldUser, _prenom, _nom, _nomUtilisateur,_bio);
+      if(_tempUserImage!=null) await db.updateUserPhoto(widget._oldUser, _tempUserImage);
       //print("2");     //s'execute avant la fin de db.updateUser pas bon 
       Navigator.of(context).pop();
     }
@@ -161,7 +167,7 @@ class _ModifProfilePageState extends State<ModifProfilePage> {
 
   Widget _buildConfirmRaisedButton(BuildContext context) {
     return RaisedButton(
-      color: Colors.deepOrange,
+      color: Colors.red,
       onPressed: (){
         _onConfirmRaisedButtonPressed(context);
       },
@@ -190,10 +196,9 @@ class _ModifProfilePageState extends State<ModifProfilePage> {
 
   /*----------------------------------A refactorer----------------------------------------------*/ 
 
-  Future<void> takePicture(BuildContext context, ImageSource source) async {
+  Future<File> takePicture(BuildContext context, ImageSource source) async {
     final File imageFile = await ImagePicker.pickImage(source: source, maxWidth: 480, maxHeight: 480);
-    await db.updateUserPhoto(widget._oldUser,imageFile);
-    return;
+    return imageFile;
   }
 
   void openPicker(BuildContext context) {
@@ -212,7 +217,13 @@ class _ModifProfilePageState extends State<ModifProfilePage> {
                     size: 40.0,
                   ),
                   onPressed: () {
-                    takePicture(context, ImageSource.camera);
+                    setState(() {
+                      takePicture(context, ImageSource.camera).then((file){
+                        setState(() {
+                          _tempUserImage=file;
+                        });
+                      });
+                    });
                     Navigator.of(context).pop();
                   },
                 ),
@@ -223,7 +234,13 @@ class _ModifProfilePageState extends State<ModifProfilePage> {
                     size: 40.0,
                   ),
                   onPressed: () {
-                    takePicture(context, ImageSource.gallery);
+                    setState(() {
+                      takePicture(context, ImageSource.gallery).then((file){
+                        setState(() {
+                          _tempUserImage=file;
+                        });
+                      });
+                    });
                     Navigator.of(context).pop();
                   },
                 ),
@@ -253,12 +270,12 @@ class _ModifProfilePageState extends State<ModifProfilePage> {
               decoration: InputDecoration(
               labelText: "bio",
               focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.deepOrange)),
+                  borderSide: BorderSide(color: Colors.red)),
               border: UnderlineInputBorder(),
             ),
               keyboardType: TextInputType.multiline,
               maxLines: null,
-              cursorColor: Colors.deepOrange,
+              cursorColor: Colors.red,
             
           ),
     );
@@ -268,51 +285,56 @@ class _ModifProfilePageState extends State<ModifProfilePage> {
   Widget build(BuildContext context) {
     final MainBloc _mainBloc = BlocProvider.of<MainBloc>(context);
     final User currentUser =_mainBloc.currentUser;
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: Text(
-          "Modifier le profile",
-          style: TextStyle(
-              color: Colors.black,
-              fontFamily:"Raleway",
-              fontWeight: FontWeight.w500
+    return Stack(
+      children:<Widget>[ 
+        Scaffold(
+        appBar: AppBar(
+          centerTitle: true,
+          title: Text(
+            "Modifier le profile",
+            style: TextStyle(
+                color: Colors.black,
+                fontFamily:"Raleway",
+                fontWeight: FontWeight.w500
+              ),
             ),
-          ),
-        elevation: 0.0,
+          elevation: 0.0,
+        ),
+        body: StreamBuilder<User>(
+          stream: _mainBloc.userUpdateControllerStream ,
+          initialData: currentUser ,
+          builder: (BuildContext context, AsyncSnapshot<User> snapshot){
+            return SingleChildScrollView(
+              padding: EdgeInsets.all(25.0),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    _mainBloc.userPhoto != null || _tempUserImage != null? 
+                    CircleAvatar(
+                      radius: MediaQuery.of(context).size.width*0.16,
+                      backgroundImage: _tempUserImage==null? _mainBloc.userPhoto : FileImage(_tempUserImage),
+                    )
+                    :
+                    CircleAvatarInitiales(widget._oldUser),
+                    FlatButton(
+                      child: Text("Modifier photo",),
+                      onPressed: (){
+                        _changeUserPhoto(context);
+                      },
+                      color: Colors.transparent,          
+                    ),
+                    _buildFormLogin(),
+                    _buildConfirmRaisedButton(context)
+                  ],
+                ) ,
+              ),
+            );
+          },
+        ),
       ),
-      body: StreamBuilder<User>(
-        stream: _mainBloc.userUpdateControllerStream ,
-        initialData: currentUser ,
-        builder: (BuildContext context, AsyncSnapshot<User> snapshot){
-          return SingleChildScrollView(
-            padding: EdgeInsets.all(25.0),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  _mainBloc.userPhoto!=null ? 
-                  CircleAvatar(
-                    radius: MediaQuery.of(context).size.width*0.16,
-                    backgroundImage: _mainBloc.userPhoto
-                  )
-                  :
-                  CircleAvatarInitiales(widget._oldUser),
-                  FlatButton(
-                    child: Text("Modifier photo",),
-                    onPressed: (){
-                      _changeUserPhoto(context);
-                    },
-                    color: Colors.transparent,          
-                  ),
-                  _buildFormLogin(),
-                  _buildConfirmRaisedButton(context)
-                ],
-              ) ,
-            ),
-          );
-        },
-      ),
+        _isLoading?LoadingOverlay():Container(),
+      ],
     );
   }
 }

@@ -4,13 +4,15 @@ import 'package:tags/Bloc/bloc_chat_page.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Bloc/main_bloc.dart';
 import 'package:tags/Event/events.dart';
-import 'package:tags/Models/message.dart';
 import 'package:tags/Models/user.dart';
 import 'package:tags/UI/chat_bubble.dart';
+import 'package:tags/UI/clickable_text.dart';
 import 'package:tags/UI/user_circle_avatar.dart';
 import 'package:tags/Utils/firebase_db.dart';
 import 'dart:async';
 
+const int ADD_DEL_CONTACT = 0;
+const int BLOCK_UNBLOCK_USER = 1;
 
 class ChatPage extends StatefulWidget {
 
@@ -41,7 +43,7 @@ class _ChatPageState extends State<ChatPage> {
 
   
 
-  void _fetchMoreTags() async {
+  void _fetchMoreMessages() async {
     if(_scrollController.position.pixels==_scrollController.position.maxScrollExtent){
       if(lastExtent!=_scrollController.position.maxScrollExtent){
         print("--------------------FetchMoreMessageEvent triggered----------------");
@@ -64,7 +66,7 @@ class _ChatPageState extends State<ChatPage> {
         children: <Widget>[
           FloatingActionButton(
             child: Icon(Icons.camera_alt,color: Colors.white),
-            backgroundColor: Colors.deepOrange,
+            backgroundColor: Colors.red,
             onPressed: (){
 
             },
@@ -85,19 +87,19 @@ class _ChatPageState extends State<ChatPage> {
                 contentPadding: EdgeInsets.all(10.0)),
               keyboardType: TextInputType.multiline,
               maxLines: null,
-              cursorColor: Colors.deepOrange,
+              cursorColor: Colors.red,
             ),
           ),
           IconButton(
                 disabledColor: Colors.black12,
-                icon: Icon(Icons.send, color: _focusNode.hasFocus? Colors.deepOrange:Color.fromARGB(150,182, 182, 182)),
+                icon: Icon(Icons.send, color: _focusNode.hasFocus? Colors.red:Color.fromARGB(150,182, 182, 182)),
                 onPressed: 
                 () async {
                   _key.currentState.save();
                   if(message.trim().length!=0){
-                    Message messageTosend =Message(null,currentUser.id,_messageTextController.text,);
+                    //Message messageTosend =Message(null,currentUser.id,_messageTextController.text,);
+                    await  _sendMessages(_messageTextController.text);
                     _messageTextController.clear();
-                    await  _sendMessages(messageTosend);
                   }
                 },
               )
@@ -107,7 +109,7 @@ class _ChatPageState extends State<ChatPage> {
         color: Color.fromARGB(40,182, 182, 182),
         border: Border.all(
           width: 2.0,
-          color: _focusNode.hasFocus? Colors.deepOrange:Color.fromARGB(150,182, 182, 182),
+          color: _focusNode.hasFocus? Colors.red:Color.fromARGB(150,182, 182, 182),
           style: BorderStyle.solid
         ) ,
         borderRadius: const BorderRadius.all(Radius.circular(25.0)),
@@ -125,13 +127,13 @@ class _ChatPageState extends State<ChatPage> {
     final MainBloc _mainBloc = BlocProvider.of<MainBloc>(context);
     currentUser =_mainBloc.currentUser;
     _scrollController = ScrollController();
-    _scrollController.addListener(_fetchMoreTags);
+    _scrollController.addListener(_fetchMoreMessages);
     _blocListChatMessage=BlocChatPage(widget._discussionId);
   }
 
-  Future<void> _sendMessages(Message message) async {
+  Future<void> _sendMessages(String messageContent) async {
     print("[_sendMessages ]"+widget._discussionId);
-    db.sendMessageFirestore(widget._discussionId,message,currentUser,widget._partner);
+    await db.sendMessageFirestore(widget._discussionId,messageContent,currentUser,widget._partner);
   }
 
   Widget _buildLoadingIndicator(bool isLoading){
@@ -154,29 +156,95 @@ class _ChatPageState extends State<ChatPage> {
     db.updateDiscussion(currentUser.id,widget._discussionId);
     //TODO : faire ici aussi la mis a jour des derniers messages affiché dans la conv 
     print("dispose");
-    _scrollController.removeListener(_fetchMoreTags);
+    _scrollController.removeListener(_fetchMoreMessages);
     _scrollController.dispose();
     super.dispose();
   }
+
+  /*bool _isContact(User currentUser, User partner){
+    return currentUser.contacts.contains(partner.id);
+  }*/
   
+  Widget _buildListView(AsyncSnapshot<List<DocumentSnapshot>> listSnapshot,AsyncSnapshot snapshot){
+    return ListView.builder(
+      controller: _scrollController,
+      reverse: true,
+      itemCount: listSnapshot.hasData? listSnapshot.data.length+1 : 0,
+      itemBuilder: (BuildContext context, int index) {
+        if(index==listSnapshot.data.length){
+          return  Center(
+            child: _buildLoadingIndicator(snapshot.data)
+          );
+        }
+        return Column(
+          children: <Widget>[
+            widget._partner.id==listSnapshot.data[index]["userId"]?
+              ChatBubble.fromDocumentSnapshot(listSnapshot.data[index],true)
+              :
+              ChatBubble.fromDocumentSnapshot(listSnapshot.data[index],false),
+              SizedBox(height: 10.0,) 
+            ],
+          );
+        }
+      );
+  }
 
   @override
   Widget build(BuildContext context) {
-    print("[build ]"+widget._discussionId);
+    //final bool isContact =_isContact(currentUser, widget._partner);
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
+        actions: <Widget>[
+          PopupMenuButton(
+            itemBuilder: (BuildContext context){
+              return [
+                /*PopupMenuItem(
+                  child: isContact? Text("Supprimer des contacts") : Text("Ajouter aux contacts"),
+                  value: 0 ,
+                ),*/
+                PopupMenuItem(
+                  child: Text("Bloquer"),
+                  value: 1 ,
+                ),
+              ];
+            },
+            icon: Icon(Icons.more_vert),
+            onSelected: (int choice){
+              switch(choice){
+                /*case ADD_DEL_CONTACT:
+                  if(isContact){
+
+                  }
+                  else{
+
+                  }
+                  break;*/
+                case BLOCK_UNBLOCK_USER:
+                  //if deja bloqué
+                    //on débloque
+                  //else
+                    //on bloque
+                  break;
+              }
+            },
+          )
+        ],
         centerTitle: true,
         title: Row(
           children: <Widget>[
             _userCircleAvatar,
             SizedBox(width: 18.0),
-            Text(widget._partner.userName ,style: TextStyle(color: Colors.black),),
+            ClickableWidget( 
+              Text(widget._partner.userName ,style: TextStyle(fontSize: 25.0,fontWeight: FontWeight.bold,color: Colors.black)),
+              widget._partner.id
+            ),
           ],
         )
       ),
       body: StreamBuilder<List<DocumentSnapshot>>(
         stream: _blocListChatMessage.listChatMessageControllerStream,
-        initialData: _blocListChatMessage.snapshotChatMessageList,
+        initialData: _blocListChatMessage.chatMessageList,
         builder: (BuildContext context, AsyncSnapshot<List<DocumentSnapshot>> listSnapshot){
           if(!listSnapshot.hasData) return Container();
           convExist=true;
@@ -187,27 +255,7 @@ class _ChatPageState extends State<ChatPage> {
                 initialData: false ,
                 builder: (BuildContext context, AsyncSnapshot snapshot){
                   return Expanded(
-                    child: ListView.builder(
-                      controller: _scrollController,
-                      reverse: true,
-                      itemCount: listSnapshot.hasData? listSnapshot.data.length+1 : 0,
-                      itemBuilder: (BuildContext context, int index) {
-                        if(index==listSnapshot.data.length){
-                          return  Center(
-                            child: _buildLoadingIndicator(snapshot.data)
-                          );
-                        }
-                        return Column(
-                          children: <Widget>[
-                            widget._partner.id==listSnapshot.data[index]["userId"]?
-                            ChatBubble.fromDocumentSnapshot(listSnapshot.data[index],true)
-                            :
-                            ChatBubble.fromDocumentSnapshot(listSnapshot.data[index],false),
-                            SizedBox(height: 10.0,) 
-                          ],
-                        );
-                      }
-                    ),
+                    child: _buildListView(listSnapshot, snapshot)
                   );
                 },
               ),

@@ -3,15 +3,16 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geoflutterfire/geoflutterfire.dart';
 import 'package:location/location.dart';
 import 'package:tags/Bloc/bloc_provider.dart';
 import 'package:tags/Event/events.dart';
-import 'package:tags/Models/tags.dart';
+import 'package:tags/Models/publicmark.dart';
 import 'package:tags/Models/user.dart';
 import 'package:tags/Utils/firebase_db.dart';
-import '../Utils/geolocalisation.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:tags/Utils/local_notification_helper.dart';
+
 
 
 
@@ -20,227 +21,229 @@ class MainBloc extends BlocBase {
   //il faudra gérer les updates de User si par exemple il change de photo ou de UserName
   //avec un event updateUser qui modfie _currentUser avec les nouvelles données.
 
+  StreamSubscription _userPostSub;
+  StreamSubscription _userDiscussionSub;
+
+
+
+  GeoFirePoint _userInitialFirePoint;
+
+  static const int MAX_NB_MARK = 40;
+  static const int MAX_NB_POPULAR_MARK = 15;
+
+  //if nbMark*PROPORTION_POPULAR_MARK < MAX_NB_POPULAR_MARK alors ...
+  //static const double PROPORTION_POPULAR_MARK = 0.2;
+
+  static const int NEW_COMMENT_ID=0;
+  static const int NEW_MESSAGE_ID=1;
+  static const int NEW_LIKE_ID=2;
+  static const int NEW_FAV_CONTENT_ID=3;
+
+  static const double USER_RANGE=1;
+  static const double QUERY_RANGE=10;
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =  FlutterLocalNotificationsPlugin();
+
+  MainBloc(){
+
+    var initializationSettingsAndroid =  AndroidInitializationSettings('app_icon');
+    var initializationSettingsIOS =  IOSInitializationSettings(
+      onDidReceiveLocalNotification: (id,title,body, payload) => onSelectNotification(payload)
+    );
+    var initializationSettings =  InitializationSettings(
+      initializationSettingsAndroid, initializationSettingsIOS
+    );
+    flutterLocalNotificationsPlugin.initialize(initializationSettings,onSelectNotification: onSelectNotification);
+    _appResumedControllerStream.listen(_onAppResumed);
+    _newFavContentSeenNotificationControllerStream.listen(_onNewFavContentNotificationSeen);
+  }
+
+    Future onSelectNotification(String payload) async {
+      print("notif tapped");
+      return;
+    }
+
   StreamSubscription _firestoreSub;
   Location _userLocation= Location();
   //TODO : peut il y avoir un problème avec la pagination si
   //on fectMoreTags alors qu'on ne se trouve plus dans la zone
 
-  
-  /*bool _favTagsEdgeReached=false;
-
-  void setFavTagsEdgeReached(bool favTagsEdgeReached){
-    this._favTagsEdgeReached=favTagsEdgeReached;
-  }
-
-  bool _fetchingPost=false;*/
-
-
-  //TODO: mettre l'initialisation et l'actualisation de la position dans le MainBloc
 
   //-----------------------------------------ListTagsController--------------------------------------
 
-  List<DocumentSnapshot> _snapshotTagsList=List<DocumentSnapshot>();
-
-  List<Tags> _filteredTagsList=List<Tags>();
-  List<Tags> get filteredSnapshotTagsList => _filteredTagsList;
- 
-  List<Tags> _marksList=List<Tags>();
-  List<Tags> get marksList => _marksList;
-
-  List<Tags> _mostPopularTags=List<Tags>();
-  List<Tags> get mostPopularTags => _mostPopularTags;
-
-  List<Tags> listFavTags = List<Tags>();
+  List<DocumentSnapshot> _snapshotMarksList=List<DocumentSnapshot>();
+  List<PublicMark> listFavMarks = List<PublicMark>();
   
-
-
 
   /************************************* StreamController des marker de map_page ***************************/
 
-  final StreamController<List<Tags>> _listMarkerTagsController = StreamController<List<Tags>>.broadcast();
+  /*final StreamController<List<PublicMark>> _listMarkerTagsController = StreamController<List<PublicMark>>.broadcast();
 
-  StreamSink<List<Tags>> get _listMarkerTagsControllerSink => _listMarkerTagsController.sink;
-  Stream<List<Tags>> get listMarkerTagsControllerStream => _listMarkerTagsController.stream;
+  StreamSink<List<PublicMark>> get _listMarkerTagsControllerSink => _listMarkerTagsController.sink;
+  Stream<List<PublicMark>> get listMarkerTagsControllerStream => _listMarkerTagsController.stream;*/
 
 
-  /************************************* StreamController des marks de list_marks_page ***************************/
-
-  final StreamController<List<Tags>> _listTagsPageController = StreamController<List<Tags>>.broadcast();
-
-  StreamSink<List<Tags>> get _listTagsPageControllerSink => _listTagsPageController.sink;
-  Stream<List<Tags>> get listTagsPageControllerStream => _listTagsPageController.stream;
-
-  /************************************* StreamController des marks de popular_fav_page ***************************/
-
-  final StreamController<List<Tags>> _listPopularTagsController = StreamController<List<Tags>>.broadcast();
-
-  StreamSink<List<Tags>> get _listPopularTagsControllerSink => _listPopularTagsController.sink;
-  Stream<List<Tags>> get listPopularTagsControllerStream => _listPopularTagsController.stream;
 
 
 
   bool getFavStatus(String tagsId){
-     if(_currentUser.favTagsId!=null) return _currentUser.favTagsId.contains(tagsId);
+     if(_currentUser!=null) return _currentUser.favTagsId.contains(tagsId);
   } 
 
-
-
-  void _onNewTagsSnapshot(List<DocumentSnapshot> snapshot){
-    //TODO: est triggered 2 fois a chaque fois !!
-    _snapshotTagsList=snapshot;
-    _tagsFilter(snapshot);
+  void _onLocationChanged(LocationData updatedLocation){
+    _userCurrentPosition=updatedLocation;
   }
 
-  void _tagsFilter(List<DocumentSnapshot> snapshot){
-    /**Cette fonction permet de filtrer les marks qui doivent
-     * aller dans la favPage (most Popular), liste des marks a proximité et marker sur googleMap 
-     */
-        
-    _mostPopularTags=[];                    //liste des marks populaire pour popular_fav_page
-    _filteredTagsList=[];                   //liste des marks pour list_marks_page
-    _marksList=[];                          //liste des marks, utile pour map_page
-    int totalPopularity=0;
-    int popularity;
+  void _onNewMarkSnapshot(List<DocumentSnapshot> snapshot){
+    //TODO: est triggered 2 fois a chaque fois !!
+    _snapshotMarksList=snapshot;
+    //_filterMarksInit(_snapshotMarksList);
+  }
+
+  //TODO : faire en sorte de ne pas tout refiltrer a chaque fois qu'on appel locationChanged
+
+  Future<List<PublicMark>> filterMarksForListMarkPage() async {
+    print(" ############### FILTERING FOR LIST MARK PAGE ############ ");
+    //_userCurrentPosition = await _userLocation.getLocation();
+    //filtre les marks qui seront afficher sur la markPage
+    List<PublicMark> listMarksPage=List<PublicMark>();  //liste des marks pour list_marks_page
+    _snapshotMarksList.forEach((DocumentSnapshot doc){
+      final PublicMark mark = PublicMark.fromDocumentSnapshot(doc);
+      final bool isFav = getFavStatus(mark.id);
+      mark.setFavStatus(isFav);
+      GeoFirePoint markPosition = GeoFirePoint(mark.lat, mark.long);
+      final double distance=markPosition.distance(lat: _userCurrentPosition.latitude,lng:_userCurrentPosition.longitude);
+      //TODO: remplacer les valeurs en dur du nombre de mark afficher sur la map
+      if(distance<=1){
+        //Si la mark est dans un rayon de 1km autour de l'utilisateur
+        //alors on l'affiche dans la list_marks_page
+         mark.setDistance(distance);
+        setDistanceLabelAndOnRange(mark);
+        listMarksPage.add(mark);
+      }
+    });
+    return listMarksPage;
+  }
+
+  
+
+  Future<List<PublicMark>> filterMarksForMapPage() async {
+
+    List<PublicMark> listMapPage=List<PublicMark>();      //liste des marks, utile pour map_page
+    int nbMark=_snapshotMarksList.length;
+    int nbPopularMark=0;
+    _snapshotMarksList.sort((a,b){
+      final int popA = a.data["popularity"];
+      final int popB = b.data["popularity"];
+      return popB.compareTo(popA);
+    });
+    if(nbMark>MAX_NB_MARK) nbMark=MAX_NB_MARK;
+    for(int i=0;i<nbMark;i++){
+      DocumentSnapshot doc = _snapshotMarksList[i];
+      final PublicMark mark = PublicMark.fromDocumentSnapshot(doc);
+      final bool isFav = getFavStatus(doc.documentID);
+      mark.setFavStatus(isFav);
+      if(nbPopularMark <MAX_NB_POPULAR_MARK ){
+        mark.setIsPopular(true);
+        nbPopularMark++;
+      } 
+      listMapPage.add(mark); 
+    }
+    return listMapPage;
+  }
+
+  Future<List<PublicMark>>  filterMarksForPopularPage() async{
+    
+    List<PublicMark> listPopularMark=List<PublicMark>();     //liste des marks populaire pour popular_fav_page
+    int nbMark=_snapshotMarksList.length;
+    int nbPopularMark=0;
+    _snapshotMarksList.sort((a,b){
+      final int popA = a.data["popularity"];
+      final int popB = b.data["popularity"];
+      return popB.compareTo(popA);
+    });
+
+    if(nbMark>MAX_NB_MARK) nbMark=MAX_NB_MARK;
+    for(int i=0;i<nbMark;i++){
+      DocumentSnapshot doc = _snapshotMarksList[i];
+      final PublicMark mark = PublicMark.fromDocumentSnapshot(doc);
+      if(nbPopularMark <MAX_NB_POPULAR_MARK && mark.lastPostImageUrl!=null){
+
+        GeoFirePoint markPosition = GeoFirePoint(mark.lat, mark.long);
+        final double distance=markPosition.distance(lat: _userCurrentPosition.latitude,lng: _userCurrentPosition.longitude);
+        mark.setDistance(distance);
+        setDistanceLabelAndOnRange(mark);
+
+        final bool isFav = getFavStatus(doc.documentID);
+        mark.setFavStatus(isFav);
+
+        print(mark.name);
+        print(mark.lastPostImageUrl);
+        mark.setIsPopular(true);
+        listPopularMark.add(mark); 
+        nbPopularMark++;
+      } 
+      
+    }
+
+    return listPopularMark;
+  }
+
+  /*void _updateMarksDistance(List<DocumentSnapshot> snapshot){
+    _filteredTagsList=[]; 
     snapshot.forEach((DocumentSnapshot tags){
-      final Tags tag = Tags.fromDocumentSnapshot(tags);
+      final PublicMark tag = PublicMark.fromDocumentSnapshot(tags);
       final bool isFav = getFavStatus(tags.documentID);
+      tag.setFavStatus(isFav);
       GeoFirePoint tagPosition = GeoFirePoint(tag.lat, tag.long);
+      //Distance entre la range et le user
       final double distance=tagPosition.distance(lat: _userCurrentPosition.latitude,lng: _userCurrentPosition.longitude);
       tag.setDistance(distance);
-      popularity=tag.nbFav+tag.nbPost;
-      tag.setPopularity(popularity);
-      totalPopularity+=popularity;
-      tag.setFavStatus(isFav);
-      _marksList.add(tag);
+      setDistanceLabelAndOnRange(tag);
       if(distance<=1){
         //Si la mark est dans un rayon de 1km autour de l'utilisateur
         //alors on l'affiche dans la list_marks_page
         _filteredTagsList.add(tag);
       }
     });
-    //print("############ AVERAGE POPULARITY : "+(totalPopularity~/(snapshot.length)).toString());
-    _marksList.forEach((Tags tag){
-      //print("############ NAME : "+tag.name);
-      //print("############  POPULARITY : "+tag.popularity.toString());
-      if(snapshot.length!=0){
-        if(tag.popularity>=totalPopularity~/(snapshot.length)) {
-          tag.setIsPopular(true);
-          _mostPopularTags.add(tag);
-        }
-      }
-    });
-    _listPopularTagsControllerSink.add(_mostPopularTags);    //on ajoute au stream de popular_fav_page
     _listTagsPageControllerSink.add(_filteredTagsList);              //on ajoute au stream de list_marks_page 
-    _listMarkerTagsControllerSink.add(_marksList);           //on ajoute au stream de la map_page           
-  }
+  }*/
 
-  void _onLocationChanged(LocationData updatedLocation){
-    //print("************* LOCATION CHANGED BY 5 M ******************");
-    /*if(Geolocalisation.gmController!=null){
-      Geolocalisation.gmController.moveCamera(
-      CameraUpdate.newCameraPosition(CameraPosition(
-        zoom: Geolocalisation.gmController.,
-        target: LatLng(updatedLocation.latitude, updatedLocation.longitude)
-      ))
-      );
-    }*/
+  /*void _onLocationChanged(LocationData updatedLocation){
     _userCurrentPosition=updatedLocation;
-    _userPositionControllerSink.add(_userCurrentPosition);
-    _tagsFilter(_snapshotTagsList);
+    double dist = _userInitialFirePoint.distance(lat: _userCurrentPosition.latitude,lng:_userCurrentPosition.longitude);
+    if(dist>USER_RANGE){
+      //On doit refiltrer les mark afficher dans la MarkPage
+      _filterMarks(_snapshotMarksList);
+    }
+    //_userPositionControllerSink.add(_userCurrentPosition);
+    _updateMarksDistance(_snapshotMarksList);
+  }*/
+
+  void setDistanceLabelAndOnRange(PublicMark mark){
+    int dist = (mark.distance*1000).toInt();
+    if(dist <= mark.tagRange) mark.setIsNear(true);
+    else mark.setIsNear(false);
+    dist = dist - mark.tagRange.toInt() ;
+    mark.setDistanceLabel(dist.toString());
   }
 
 
-  //------------------------------------------FavTag StreamControllers-----------------------------------------
-
-  final StreamController<List<Tags>> _listFavTagController = StreamController<List<Tags>>.broadcast();
-
-  StreamSink<List<Tags>> get _listFavTagControllerSink => _listFavTagController.sink;
-  Stream<List<Tags>> get listFavTagControllerStream => _listFavTagController.stream;
-
-  /*final StreamController<FetchMoreFavTagsEvent> _fetchMoreFavTagController = StreamController<FetchMoreFavTagsEvent>.broadcast();
-
-  StreamSink<FetchMoreFavTagsEvent> get fetchMoreFavTagControllerSink => _fetchMoreFavTagController.sink;
-  Stream<FetchMoreFavTagsEvent> get _fetchMoreFavTagControllerStream => _fetchMoreFavTagController.stream;
-
-
-  final StreamController<bool> _loadingFavTagsController = StreamController<bool>.broadcast();
-
-  StreamSink<bool> get _loadingFavTagsControllerSink => _loadingFavTagsController.sink;
-  Stream<bool> get loadingFavTagsControllerStream => _loadingFavTagsController.stream;
-  */
-
- /* void _fetchMoreFavTags(FetchMoreFavTagsEvent e) async {
-    int i;
-    int edge;
-    _listFavTags=[];
-    if(_favTagsEdgeReached) return;
-    if(e.fetchedIndex+2<=_currentUser.favTagsId.length){
-      edge=2;
-      if(e.fetchedIndex+2==_currentUser.favTagsId.length)_favTagsEdgeReached=true;
-    }
-    else {
-      if(_currentUser.favTagsId.length==0){
-        edge=0;
-      }
-      else edge=e.fetchedIndex+2-currentUser.favTagsId.length;
-      _favTagsEdgeReached=true;
-    }
-    _fetchingPost=true;
-    _loadingFavTagsControllerSink.add(_fetchingPost);
-    await Future(() async{
-      for(i=e.fetchedIndex;i<e.fetchedIndex+edge;i++){
-      final String markId = _currentUser.favTagsId[i];
-      print("first");
-      var doc = await Firestore.instance.collection("Tags").document(markId).get();
-        if(doc.exists){
-          final Tags favMark = Tags.fromDocumentSnapshot(doc);
-          favMark.setFavStatus(true);
-          _listFavTags.add(favMark);
-        }
-        print(_listFavTags);
-    }
-    });
-    _fetchingPost=false;
-    _loadingFavTagsControllerSink.add(_fetchingPost);
-    print(_listFavTags);
-    _listFavTagControllerSink.add(_listFavTags);
-  }
-  */
-
-  MainBloc(){
-    /*********************FavTags  *************************/
-    //_fetchMoreFavTagControllerStream.listen(_fetchMoreFavTags);    
-
-    /*****************************************************/
-    _userLocation.getLocation().then((LocationData loc){
-      _userCurrentPosition=loc;
-      _userPositionControllerSink.add(_userCurrentPosition);
-      GeoFirePoint center = db.geoflutterfire.point(latitude : _userCurrentPosition.latitude, longitude : _userCurrentPosition.longitude);
-        Query init = Firestore.instance.collection("Tags");
-        db.geoflutterfire.collection(collectionRef: init).within(
-          strictMode: false,
-          center: center,
-          field: "position",
-          radius: 10,
-        ).listen(_onNewTagsSnapshot);
-    });
-    _userLocation.changeSettings(distanceFilter: 10);
-    _userLocation.onLocationChanged().listen(_onLocationChanged);
-    _provideCurrentUser();
-    //_newFavContentControllerStream.listen(_onNewFavContent);
-    }
+  
   
     @override
     void dispose() {
-      _listPopularTagsController.close();
-      _listTagsPageController.close();
+      print("########## Disposing MAINBLOC ########");
       _firestoreSub.cancel();
+      _userPostSub.cancel();
+      _userDiscussionSub.cancel();
+      _appResumedController.close();
+      _newFavContentNotificationSeenController.close();
       _userUpdateController.close();
       _listConvController.close();
-      _userPositionController.close();
+      //_userPositionController.close();
       _newMessageController.close();
       _listUserPostController.close();
-      _newCommentController.close();
+      _newUserPostEventController.close();
       _newEventController.close();
       // TODO: implement dispose
     }
@@ -258,23 +261,21 @@ class MainBloc extends BlocBase {
   static User _currentUser;
   CachedNetworkImageProvider _userPhoto;
   LocationData _userCurrentPosition;
+  LocationData _userInitialPosition;
   LocationData get userCurrentPosition => _userCurrentPosition;
+  LocationData get userInitialPosition => _userInitialPosition;
   User get currentUser => _currentUser;
   CachedNetworkImageProvider get userPhoto => _userPhoto;
-  String _lastFavTagsPostIdSeen;
-  String _lastConnectionTimeStamp="0";
-  bool newFavContent=false;
+
+  String _lastConnectionTimeStamp;
+  bool _newFavContent=false;
+
 
     void setCurrentUser(User user){
         _currentUser=user;
     }
+  bool get newFavContent => _newFavContent;
 
-
-  String get lastFavTagsPostIdSeen => _lastFavTagsPostIdSeen;
-
-  void setLastFavTagsPostIdSeen(String arg){
-    _lastFavTagsPostIdSeen=arg;
-  }
 
   final StreamController<User> _userUpdateController = StreamController<User>.broadcast();
 
@@ -282,61 +283,109 @@ class MainBloc extends BlocBase {
 
   Stream<User> get userUpdateControllerStream => _userUpdateController.stream;
 
-  final StreamController<LocationData> _userPositionController = StreamController<LocationData>.broadcast();
+  /*final StreamController<LocationData> _userPositionController = StreamController<LocationData>.broadcast();
 
   StreamSink<LocationData> get _userPositionControllerSink => _userPositionController.sink;
 
-  Stream<LocationData> get userPositionControllerStream => _userPositionController.stream;
-  
-  void _provideCurrentUser() async {
-      _currentUser = await db.getCurrentUser();
-      _lastConnectionTimeStamp=currentUser.lastConnectionTime;
-      print("########### DEBUG PROVIDE CURRENT USER ############  : "+ _currentUser.lastConnectionTime);
-      db.userRef.document(currentUser.id).snapshots().listen(onCurrentUserUpdate);
-      listFavTags =  await getUserFavMarks();
-      newFavContent=hasChangedSinceLastConnection(listFavTags);
-      Firestore.instance.collection("User").document(currentUser.id).collection("Discussion").orderBy("timeStamp",descending: true).snapshots().listen(_onNewMessage);
-      Firestore.instance.collection("User").document(currentUser.id).collection("UserPost").orderBy("timeStamp",descending : true).snapshots().listen(_onNewComment);
-    }
+  Stream<LocationData> get userPositionControllerStream => _userPositionController.stream;*/
 
-    Future<List<Tags>> getUserFavMarks() async {
-      List<Tags> favMarks=[];
-      if(!newFavContent){
+
+  final StreamController<ResumeAppEvent> _appResumedController = StreamController<ResumeAppEvent>.broadcast();
+
+  StreamSink<ResumeAppEvent> get appResumedControllerSink => _appResumedController.sink;
+
+  Stream<ResumeAppEvent> get _appResumedControllerStream => _appResumedController.stream;
+
+  final StreamController<NewFavContentSeen> _newFavContentNotificationSeenController = StreamController<NewFavContentSeen>.broadcast();
+
+  StreamSink<NewFavContentSeen> get newFavContentNotificationSeenControllerSink => _newFavContentNotificationSeenController.sink;
+
+  Stream<NewFavContentSeen> get _newFavContentSeenNotificationControllerStream => _newFavContentNotificationSeenController.stream;
+
+  void _onAppResumed(ResumeAppEvent e) async{
+    listFavMarks = await getUserFavMarks();
+    if(_newFavContent){
+      final String title = "Du nouveau contenu a était posté !";
+      showOngoingNotification(
+        flutterLocalNotificationsPlugin,
+        title : title,
+        body :"",
+        id: NEW_FAV_CONTENT_ID,
+      );
+      sendNewEvent();
+    }
+  }
+
+  void _onNewFavContentNotificationSeen(NewFavContentSeen e){
+    _newFavContent=false;
+    sendNewEvent();
+  }
+
+  
+  Future<int> provideCurrentUser(String uid) async {
+
+    _currentUser = await db.getCurrentUser(uid);
+
+    _userInitialPosition = await _userLocation.getLocation();
+    _userCurrentPosition=_userInitialPosition;
+    _userInitialFirePoint = db.geoflutterfire.point(latitude : _userInitialPosition.latitude, longitude : _userInitialPosition.longitude);
+    Query markQuery = Firestore.instance.collection("Tags");
+    db.geoflutterfire.collection(collectionRef: markQuery).within(
+      strictMode: false,
+      center: _userInitialFirePoint,
+      field: "position",
+      radius: QUERY_RANGE,
+    ).listen(_onNewMarkSnapshot);
+    _userLocation.changeSettings(distanceFilter: 10);
+    _userLocation.onLocationChanged().listen(_onLocationChanged);
+
+    _lastConnectionTimeStamp=currentUser.lastConnectionTime;
+    db.userRef.document(_currentUser.id).snapshots().listen(onCurrentUserUpdate);
+    listFavMarks =  await getUserFavMarks();
+    _userPostSub =Firestore.instance.collection("User").document(_currentUser.id).
+      collection("Discussion").orderBy("timeStamp",descending: true).snapshots().listen(_onNewMessage);
+    _userDiscussionSub = Firestore.instance.collection("User").document(_currentUser.id).
+      collection("UserPost").orderBy("timeStamp",descending : true).snapshots().listen(_onNewUserPostEvent);
+    return 0;
+  }
+
+    Future<List<PublicMark>> getUserFavMarks() async {
+
+      if(_newFavContent || _lastConnectionTimeStamp==null) return Future((){
+        return listFavMarks;
+      });
+      else{
+        List<PublicMark> favMarks=[];
+        int lastConnectionTime = int.parse(_lastConnectionTimeStamp);
+        _newFavContent=false;
         //Si on a l'icon de notif activé alors on vient de resume l'app
         //et donc d'appeler getUserFavMarks
         //donc pas besoin d'un double appel lorsque l'on accède a favPage
         await Future(() async{
           //récupère tous les favoris d'un utilisateur
-
           for(int i=0;i<_currentUser.favTagsId.length;i++){
             final String markId = _currentUser.favTagsId[i];
             DocumentSnapshot doc = await Firestore.instance.collection("Tags").document(markId).get();
             if(doc.exists){
-              final Tags favMark = Tags.fromDocumentSnapshot(doc);
+              final PublicMark favMark = PublicMark.fromDocumentSnapshot(doc);
+              int lastPostTime = int.parse(favMark.lastPostTimeStamp);
+              // On regarde si la mark a était maj pendant que l'app était en backGround
+              if(lastPostTime>lastConnectionTime){
+                _newFavContent=true;
+                // On veut les mark notifié en premier
+                if(favMarks.length!=0) favMarks.insert(0, favMark);
+                else favMarks.add(favMark);
+              }
+              else{
+                favMarks.add(favMark);
+              }
               favMark.setFavStatus(true);
-              favMarks.add(favMark);
             }
           }
         });
+        return favMarks;
       }
-      return favMarks;
-    }
-
-    bool hasChangedSinceLastConnection(List<Tags> favMarks){
-      print("############# DEBUGGING hasChangedSinceLastConnection ##############");
-      print(_lastConnectionTimeStamp);
-      int lastConnectionTime = int.parse(_lastConnectionTimeStamp);
-      bool b = false;
-      favMarks.forEach((Tags mark){
-        int lastPostTime = int.parse(mark.lastPostTimeStamp);
-        print("lastConnectionTime : " + lastConnectionTime.toString());
-        print("lastPostTime : "+lastPostTime.toString());
-        if(lastPostTime>lastConnectionTime){
-          b=true;
-        }
-      });
-      print(b);
-      return b;
+      
     }
 
 
@@ -355,15 +404,16 @@ class MainBloc extends BlocBase {
     }
 
 
-  //-----------------------------------------new Comment Event Controller--------------------------------------
+  //-----------------------------------------new UserPost Event Controller--------------------------------------
 
   QuerySnapshot userPostSnapshot;
-  bool newComment=false;
+  bool _newUserPostEvent =false;
+  bool get newUserPostEvent => _newUserPostEvent;
 
-  StreamController<bool> _newCommentController = StreamController<bool>.broadcast();
+  StreamController<bool> _newUserPostEventController = StreamController<bool>.broadcast();
 
-  StreamSink<bool> get _newCommentControllerSink => _newCommentController.sink;
-  Stream<bool> get newCommentControllerStream => _newCommentController.stream;
+  StreamSink<bool> get _newUserPostEventControllerSink => _newUserPostEventController.sink;
+  Stream<bool> get newUserPostEventControllerStream => _newUserPostEventController.stream;
 
 
 
@@ -372,21 +422,43 @@ class MainBloc extends BlocBase {
   StreamSink<QuerySnapshot> get _listUserPostControllerSink => _listUserPostController.sink;
   Stream<QuerySnapshot> get listUserPostControllerStream => _listUserPostController.stream;
 
-  void _onNewComment(QuerySnapshot snapshot){
-      newComment=false;
+  void _onNewUserPostEvent(QuerySnapshot snapshot){
+      _newUserPostEvent =false;
       userPostSnapshot=snapshot;
       snapshot.documents.forEach((DocumentSnapshot docSnap){
-        if(docSnap.data["lastCommentSeen"]!=true) newComment =true;
+        if(docSnap.data["lastCommentSeen"]==false){
+          _newUserPostEvent=true;
+          final String title = docSnap.data["lastCommentUserName"]+" a commenté";
+          final String body = docSnap.data["lastComment"];
+          showOngoingNotification(
+            flutterLocalNotificationsPlugin,
+            title : title,
+            body :body,
+            id: NEW_COMMENT_ID,
+          );
+        }
+        if(docSnap.data["lastLikeSeen"]==false){
+          _newUserPostEvent=true;
+          final String title = docSnap.data["lastLikerUserName"]+" a liké un de vos postes !";
+          //final String body = docSnap.data["lastComment"];
+          showOngoingNotification(
+            flutterLocalNotificationsPlugin,
+            title : title,
+            body :"",
+            id: NEW_LIKE_ID,
+          );
+        }
       });
       sendNewEvent();
-      _newCommentControllerSink.add(newComment);
+      _newUserPostEventControllerSink.add(_newUserPostEvent);
       _listUserPostControllerSink.add(snapshot);
     }
 
   //----------------------------------new Message Event Controller---------------------------------------
 
   QuerySnapshot userDiscussionSnapshot;
-  bool newMessage=false;
+  bool _newMessage=false;
+  bool get newMessage => _newMessage;
 
   StreamController<QuerySnapshot> _listConvController = StreamController<QuerySnapshot>.broadcast();
 
@@ -401,13 +473,26 @@ class MainBloc extends BlocBase {
   Stream<bool> get newMessageControllerStream => _newMessageController.stream;
 
   void _onNewMessage(QuerySnapshot snapshot){
-      newMessage=false;
+      _newMessage=false;
       userDiscussionSnapshot=snapshot;
       snapshot.documents.forEach((DocumentSnapshot docSnap){
-        if(docSnap.data["lastMessageSeen"]!=true) newMessage = true;
+        if(docSnap.data["lastMessageSeen"]!=true){
+          _newMessage = true;
+          if(docSnap.data["partnerId"]!=_currentUser.id){
+            final String title = docSnap.data["partnerUserName"];
+            final String body = docSnap.data["lastMessage"];
+            showOngoingNotification(
+              flutterLocalNotificationsPlugin,
+              title : title,
+              body :body,
+              id: NEW_MESSAGE_ID,
+            );
+          }
+        } 
+
       });
       sendNewEvent();
-      _newMessageControllerSink.add(newMessage);
+      _newMessageControllerSink.add(_newMessage);
       _listConvControllerSink.add(snapshot);
     }
   
@@ -422,21 +507,13 @@ class MainBloc extends BlocBase {
     Stream<NotificationEvent> get newEventControllerStream => _newEventController.stream;
 
     void sendNewEvent(){
-      print("############### DEBUG NEW FAV CONTENT ############ : "+newFavContent.toString());
-      final NotificationEvent notif = NotificationEvent(newFavContent, newMessage, newComment);
+      // print("############### DEBUG NEW FAV CONTENT ############ : "+newFavContent.toString());
+      final NotificationEvent notif = NotificationEvent(_newFavContent, _newMessage, _newUserPostEvent);
       _newEventControllerSink.add(notif);
     }
 
+  //------------------------------- Local Push Notification ------------------------------------------
 
-//------------------------------------ new Fav Content Event Controller --------------------------------
-
-  /*StreamController<bool> _newFavContentController = StreamController<bool>.broadcast();
-
-  StreamSink<bool> get newFavContentControllerSink => _newFavContentController.sink;
-  Stream<bool> get _newFavContentControllerStream => _newFavContentController.stream;
-
-  void _onNewFavContent(){
-
-  }*/
+  
   
 }

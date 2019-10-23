@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 class ChatBubble extends StatelessWidget {
 
   final bool _isPatner;
-  final String _id;
-  final String _timeStamp;
+  //final String _id;
+  //final String _timeStamp;
   final String _content;
 
 
@@ -15,24 +15,12 @@ class ChatBubble extends StatelessWidget {
 
 
   ChatBubble.fromDocumentSnapshot(DocumentSnapshot snapshot,bool isPartner):
-    _id=snapshot.documentID,
+    //_id=snapshot.documentID,
     _isPatner = isPartner,
-    _content=snapshot.data["content"],
-    _timeStamp=snapshot.data["timeStamp"];
+    _content=snapshot.data["content"];
+    //_timeStamp=snapshot.data["timeStamp"];
 
 
-
-
-
-  void _navigateOtherUserProfilePage(BuildContext context){
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (BuildContext context){
-          //return OtherUserProfilePage();
-        }
-      )
-    );
-  }
 
 
   Widget _buildChatBubble(BuildContext context){
@@ -44,9 +32,9 @@ class ChatBubble extends StatelessWidget {
             margin: EdgeInsets.only(right: 10.0),
             padding: EdgeInsets.all(10.0),
             decoration: BoxDecoration(
-              color: _isPatner? Colors.orange[200] : Colors.deepOrange,
+              color: _isPatner? Colors.orange[200] : Colors.red,
               border: Border.all(
-                color:  _isPatner? Colors.orange[200] : Colors.deepOrange,
+                color:  _isPatner? Colors.orange[200] : Colors.red,
                 width: 2.0,
                 style: BorderStyle.solid
               ) ,
